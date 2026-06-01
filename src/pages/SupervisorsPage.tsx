@@ -32,16 +32,14 @@ export default function SupervisorsPage() {
 
   const exportAssignments = () => {
     downloadCSV(
-      (assignments.data ?? []).map(a => ({
-        Asignado: a.asim_datetime,
-        Nombre: a.mb_fullname,
-        Email: a.mb_email,
-        Actividad: a.simv_title,
-        Tipo: a.simv_type,
-        Score: a.score ?? '',
-        Completado: a.completed_at ?? '',
-        Status: a.status,
-      })),
+      [
+        ['Asignado','Nombre','Email','Actividad','Tipo','Score','Completado','Status'],
+        ...(assignments.data ?? []).map(a => [
+          a.asim_datetime, a.mb_fullname, a.mb_email,
+          a.simv_title, a.simv_type, a.score ?? '',
+          a.completed_at ?? '', a.status,
+        ]),
+      ],
       `apotex_assignments_${csvDate()}.csv`
     )
   }

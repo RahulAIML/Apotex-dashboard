@@ -89,36 +89,26 @@ export default function RoleplayPage() {
 
   const exportActivities = () => {
     downloadCSV(
-      activities.map(a => ({
-        ID: a.activity_id,
-        Actividad: a.activity_name,
-        Tipo: a.activity_type,
-        Sesiones: a.sessions,
-        Usuarios: a.unique_users,
-        Promedio: a.avg_score,
-        Aprobados: a.sessions_pass,
-        PctAprobacion: a.pass_rate_pct,
-        Asignados: a.assigned_users,
-      })),
+      [
+        ['ID','Actividad','Tipo','Sesiones','Usuarios','Promedio','Aprobados','PctAprobacion','Asignados'],
+        ...activities.map(a => [a.activity_id, a.activity_name, a.activity_type, a.sessions,
+          a.unique_users, a.avg_score ?? 0, a.sessions_pass, a.pass_rate_pct, a.assigned_users]),
+      ],
       `apotex_activities_${csvDate()}.csv`,
     )
   }
 
   const exportLeaderboard = () => {
     downloadCSV(
-      bd.leaderboard.map((u, i) => ({
-        Rank: i + 1,
-        Nombre: u.name,
-        Email: u.email,
-        Sesiones: u.sessions,
-        Promedio: u.avg_score,
-        Mejor: u.best_score,
-        Aprobados: u.sessions_pass,
-        UltimaSesion: u.last_session,
-      })),
+      [
+        ['Rank','Nombre','Email','Sesiones','Promedio','Mejor','Aprobados','UltimaSesion'],
+        ...bd.leaderboard.map((u, i) => [i + 1, u.name, u.email, u.sessions,
+          u.avg_score, u.best_score, u.sessions_pass, u.last_session ?? '']),
+      ],
       `apotex_users_${csvDate()}.csv`,
     )
   }
+
 
   if (bd.isLoading) {
     return (
@@ -390,8 +380,8 @@ export default function RoleplayPage() {
               <XAxis dataKey="range" tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
               <Tooltip
-                formatter={(v: number, _: string, p: { payload: { pct: number } }) => [
-                  `${v} (${p.payload.pct}%)`,
+                formatter={(v: number, _: string, p: any) => [
+                  `${v} (${p?.payload?.pct ?? 0}%)`,
                   es ? 'Sesiones' : 'Sessions',
                 ]}
               />
