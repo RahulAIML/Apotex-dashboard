@@ -46,7 +46,8 @@ export async function fetchBridgeActivitySummary(params?: { date_from?: string; 
 
 export async function fetchBridgeLeaderboard(limit = 100) {
   const d = await get<{ leaderboard: BridgeLeaderboardUser[] }>('kpi.leaderboard', { limit })
-  return d.leaderboard
+  // Remove internal Rolplay admin accounts
+  return d.leaderboard.filter(u => isApotexMember(u.email))
 }
 
 export async function fetchBridgeTrend(granularity: 'day'|'week'|'month' = 'month', params?: { date_from?: string; date_to?: string }) {
@@ -69,9 +70,25 @@ export async function fetchBridgeSessions(params?: { limit?: number; offset?: nu
   return { sessions: d.sessions, total: d.total }
 }
 
+// Internal Rolplay admin accounts — not Apotex employees, exclude from all user-facing views
+const INTERNAL_EMAILS = new Set([
+  'ucontenido@rolplay.net',
+  'udev@rolplay.net',
+  'utester@rolplay.net',
+  'udemo@rolplay.net',
+])
+
+function isApotexMember(email: string): boolean {
+  if (!email) return false   // empty email = incomplete record, exclude
+  if (INTERNAL_EMAILS.has(email.toLowerCase())) return false
+  return true
+}
+
 export async function fetchBridgeMembers(search?: string) {
   const d = await get<{ members: BridgeMember[]; count: number }>('list.members', search ? { search } : {})
-  return { members: d.members, count: d.count }
+  // Filter: only real Apotex members (has email, not internal Rolplay accounts)
+  const members = d.members.filter(m => isApotexMember(m.mb_email))
+  return { members, count: members.length }
 }
 
 export async function fetchBridgeAdmins() {

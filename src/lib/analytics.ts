@@ -7,16 +7,61 @@ export const PASS_THRESHOLD = 60
 // ─────────────────────────────────────────────
 // Test / demo user blocklist
 // ─────────────────────────────────────────────
-// Apotex: filter known test/sandbox users (single-name entries from early pilots)
-const TEST_USER_BLOCKLIST = new Set([
+// ── Exact-name blocklist (pilot/internal accounts) ────────────
+const TEST_NAME_BLOCKLIST = new Set([
+  // Single-name sandbox entries (early pilots with no email)
   'Andrea', 'Glieb', 'lucio', 'César', 'Arqui',
   'Poncho', 'Chavo', 'Don Juan', 'Protos', 'Caligula',
   'Minako', 'Pedro', 'test', 'Test', 'TEST',
+  'GLIEB', 'BUSTAMANTE', 'salo', 'Gaby', 'Endir',
+  'Dany', 'Vic', 'Archie', 'Troncoso',
+  // Known internal testers with full names
+  'Mario Motta', 'Andrea Campos', 'Glieb 2',
+  'Oralia', 'Milka', 'guadalupe castro',
+  'Glieb Arquímedes Troncoso Bustamante',
+  'Gaby Morales', 'arqui',
 ])
 
-/** Remove simulations belonging to known test/demo accounts */
+// ── Non-Apotex email domain blocklist ─────────────────────────
+const NON_APOTEX_EMAILS = new Set([
+  'guadalupe.cuevas@audioweb.com.mx',   // audioweb tester, not an Apotex employee
+])
+
+// ── Partial name fragments to reject (case-insensitive) ───────
+const TEST_NAME_FRAGMENTS = [
+  'mario motta', 'glieb', 'arqui', 'troncos',
+  'bustama', 'test', 'demo', 'piloto',
+]
+
+/**
+ * Remove ALL non-Apotex sessions:
+ *   1. Known test names (exact)
+ *   2. Known non-Apotex emails
+ *   3. Sessions with no email AND a test-looking name (partial match)
+ *   4. Sessions with non-apotex email domains (when email is present)
+ */
 export function filterTestUsers(sims: Simulation[]): Simulation[] {
-  return sims.filter((s) => !TEST_USER_BLOCKLIST.has(s.Usuario_Nombre))
+  return sims.filter((s) => {
+    const name  = (s.Usuario_Nombre ?? '').trim()
+    const email = (s.Usuario ?? '').trim().toLowerCase()
+
+    // 1. Exact name blocklist
+    if (TEST_NAME_BLOCKLIST.has(name)) return false
+
+    // 2. Specific non-Apotex emails
+    if (NON_APOTEX_EMAILS.has(email)) return false
+
+    // 3. If email present → must be @apotex domain
+    if (email && !email.includes('apotex')) return false
+
+    // 4. If no email → check name against known test fragments
+    if (!email) {
+      const nameLower = name.toLowerCase()
+      if (TEST_NAME_FRAGMENTS.some(f => nameLower.includes(f))) return false
+    }
+
+    return true
+  })
 }
 
 // ─────────────────────────────────────────────
