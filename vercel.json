@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/apotex/api/:path*",
+      "destination": "https://serv.aux-rolplay.com/apotex/api/:path*"
+    },
+    {
+      "source": "/bridge/:path*",
+      "destination": "https://serv.aux-rolplay.com/apotex/bridge/index.php"
+    }
+  ]
+}
