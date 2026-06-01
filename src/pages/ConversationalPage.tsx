@@ -55,7 +55,7 @@ function renderLegend(props: any) {
 type Tier = 'strong' | 'developing' | 'needs-attention'
 
 function getTier(stat: ActivityStat): Tier {
-  if (stat.passRate >= 65 && stat.avgScore >= 65) return 'strong'
+  if (stat.passRate >= 70 && stat.avgScore >= 70) return 'strong'
   if (stat.passRate >= 40 || stat.avgScore >= 50)  return 'developing'
   return 'needs-attention'
 }
@@ -77,21 +77,21 @@ function TierBadge({ tier, es }: { tier: Tier; es: boolean }) {
 function getFeedbackLine(stat: ActivityStat, es: boolean): string {
   const { passRate, avgScore, count } = stat
   if (es) {
-    if (passRate >= 65 && avgScore >= 65)
+    if (passRate >= 70 && avgScore >= 70)
       return `Rendimiento consistente con ${passRate}% de aprobación en ${count} simulaciones.`
-    if (passRate >= 65 && avgScore < 65)
+    if (passRate >= 70 && avgScore < 70)
       return `Alta tasa de aprobación (${passRate}%) pero puntaje promedio bajo (${avgScore}%). Revisar profundidad de respuestas.`
-    if (passRate < 65 && avgScore >= 65)
+    if (passRate < 70 && avgScore >= 70)
       return `Buen puntaje promedio (${avgScore}%) pero solo ${passRate}% aprobaron. Revisar criterio de corte.`
     if (passRate >= 40)
       return `Rendimiento mixto (${passRate}% aprobación, ${avgScore}% puntaje). Oportunidad de mejora estructurada.`
     return `Bajo rendimiento: ${passRate}% aprobación y ${avgScore}% puntaje en ${count} simulaciones. Intervención urgente recomendada.`
   } else {
-    if (passRate >= 65 && avgScore >= 65)
+    if (passRate >= 70 && avgScore >= 70)
       return `Consistent performance with ${passRate}% pass rate across ${count} simulations.`
-    if (passRate >= 65 && avgScore < 65)
+    if (passRate >= 70 && avgScore < 70)
       return `High pass rate (${passRate}%) but low avg score (${avgScore}%). Review response depth.`
-    if (passRate < 65 && avgScore >= 65)
+    if (passRate < 70 && avgScore >= 70)
       return `Good avg score (${avgScore}%) but only ${passRate}% passed. Review pass threshold.`
     if (passRate >= 40)
       return `Mixed results — ${passRate}% pass rate, ${avgScore}% avg score. Structured improvement opportunity.`
@@ -100,7 +100,7 @@ function getFeedbackLine(stat: ActivityStat, es: boolean): string {
 }
 
 function TrendIcon({ passRate }: { passRate: number }) {
-  if (passRate >= 65) return <TrendingUp   className="w-4 h-4 text-success" />
+  if (passRate >= 70) return <TrendingUp   className="w-4 h-4 text-success" />
   if (passRate >= 40) return <Minus         className="w-4 h-4 text-yellow-400" />
   return                      <TrendingDown  className="w-4 h-4 text-danger" />
 }
@@ -136,7 +136,7 @@ function SimulatorCard({ stat, rank, es }: { stat: ActivityStat; rank: number; e
         </div>
         <div className="bg-white/[0.03] rounded-lg p-2">
           <p className={`text-[18px] font-bold tabular-nums leading-none ${
-            stat.passRate >= 65 ? 'text-success' : stat.passRate >= 40 ? 'text-yellow-400' : 'text-danger'
+            stat.passRate >= 70 ? 'text-success' : stat.passRate >= 40 ? 'text-yellow-400' : 'text-danger'
           }`}>
             {stat.passRate}
             <span className="text-[11px] font-normal text-slate-500">%</span>
@@ -160,7 +160,7 @@ function SimulatorCard({ stat, rank, es }: { stat: ActivityStat; rank: number; e
         <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${
-              stat.passRate >= 65 ? 'bg-success' : stat.passRate >= 40 ? 'bg-yellow-400' : 'bg-danger'
+              stat.passRate >= 70 ? 'bg-success' : stat.passRate >= 40 ? 'bg-yellow-400' : 'bg-danger'
             }`}
             style={{ width: `${stat.passRate}%` }}
           />
@@ -367,13 +367,13 @@ export default function ConversationalPage() {
                       {r.count.toLocaleString()}
                     </td>
                     <td className="py-2.5 pr-4 text-right tabular-nums">
-                      <span className={`font-semibold ${r.avg >= 0.7 ? 'text-success' : r.avg >= 0.4 ? 'text-yellow-400' : 'text-danger'}`}>
+                      <span className={`font-semibold ${r.avg >= 7 ? 'text-success' : r.avg >= 4 ? 'text-yellow-400' : 'text-danger'}`}>
                         {r.avg}
                       </span>
                     </td>
                     <td className="py-2.5 text-right">
                       <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                        r.passRate >= 60
+                        r.passRate >= 70
                           ? 'bg-success/10 text-success'
                           : r.passRate >= 40
                             ? 'bg-yellow-400/10 text-yellow-400'
@@ -472,7 +472,7 @@ export default function ConversationalPage() {
                       </td>
                       <td className="py-2.5 pr-4 text-right tabular-nums">
                         <span className={`font-semibold text-[12px] ${
-                          stat.avgScore >= 65 ? 'text-success' : stat.avgScore >= 45 ? 'text-yellow-400' : 'text-danger'
+                          stat.avgScore >= 70 ? 'text-success' : stat.avgScore >= 50 ? 'text-yellow-400' : 'text-danger'
                         }`}>
                           {stat.avgScore}%
                         </span>
@@ -482,13 +482,13 @@ export default function ConversationalPage() {
                           <div className="w-16 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full ${
-                                stat.passRate >= 65 ? 'bg-success' : stat.passRate >= 40 ? 'bg-yellow-400' : 'bg-danger'
+                                stat.passRate >= 70 ? 'bg-success' : stat.passRate >= 40 ? 'bg-yellow-400' : 'bg-danger'
                               }`}
                               style={{ width: `${stat.passRate}%` }}
                             />
                           </div>
                           <span className={`tabular-nums text-[12px] font-semibold w-9 text-right ${
-                            stat.passRate >= 65 ? 'text-success' : stat.passRate >= 40 ? 'text-yellow-400' : 'text-danger'
+                            stat.passRate >= 70 ? 'text-success' : stat.passRate >= 40 ? 'text-yellow-400' : 'text-danger'
                           }`}>
                             {stat.passRate}%
                           </span>

@@ -15,7 +15,7 @@ import { useChartColors } from '../../lib/chartTheme'
 import { TooltipShell, TTitle, TRow, useTooltipColors, type TooltipColors } from './TooltipShell'
 
 const BAR_COLOR = (bucket: ScoreBucket) => {
-  if (bucket.max <= PASS_THRESHOLD) return '#EF4444'
+  if (bucket.max < PASS_THRESHOLD) return '#EF4444'
   return '#3B82F6'
 }
 

@@ -29,9 +29,9 @@ export default function CoachingPage() {
     )
   }
 
-  const lowPerformers = (userStats ?? []).filter((u) => u.avgScore < 60).slice(0, 5)
-  const weakActivities = (actStats ?? []).filter((a) => a.passRate < 60).slice(0, 5)
-  const weakRounds = (roundStats ?? []).filter((r) => r.passRate < 60)
+  const lowPerformers = (userStats ?? []).filter((u) => u.avgScore < 70).slice(0, 5)
+  const weakActivities = (actStats ?? []).filter((a) => a.passRate < 70).slice(0, 5)
+  const weakRounds = (roundStats ?? []).filter((r) => r.passRate < 70)
 
   return (
     <div className="space-y-6">

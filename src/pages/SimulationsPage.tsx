@@ -92,13 +92,13 @@ export default function SimulationsPage() {
                       <td className="px-4 py-3">
                         <span className={cn(
                           'font-semibold',
-                          s.Calificacion >= 60 ? 'text-success' : 'text-danger'
+                          s.Calificacion >= 70 ? 'text-success' : 'text-danger'
                         )}>
                           {s.Calificacion}%
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {s.Diagnostico_Final === 'Si' ? (
+                        {s.Calificacion >= 70 ? (
                           <span className="badge bg-success/10 text-success">
                             <CheckCircle2 className="w-3 h-3" /> {t('status_pass')}
                           </span>

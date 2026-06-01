@@ -113,8 +113,8 @@ export default function LeaderboardPage() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-slate-400 hidden sm:table-cell">{u.count}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {u.avgScore >= 60 ? <TrendingUp className="w-3 h-3 text-success shrink-0" /> : <TrendingDown className="w-3 h-3 text-danger shrink-0" />}
-                      <span className={`font-semibold text-sm ${u.avgScore >= 60 ? 'text-success' : 'text-danger'}`}>{u.avgScore}%</span>
+                      {u.avgScore >= 70 ? <TrendingUp className="w-3 h-3 text-success shrink-0" /> : <TrendingDown className="w-3 h-3 text-danger shrink-0" />}
+                      <span className={`font-semibold text-sm ${u.avgScore >= 70 ? 'text-success' : 'text-danger'}`}>{u.avgScore}%</span>
                     </div>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-slate-400 hidden sm:table-cell">{u.passRate}%</td>
