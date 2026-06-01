@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
-// Bridge data loaded on /rolplay page — overview uses simulator endpoints only
+import { useBridgeOverview } from '../api/roleplayQueries'
 import {
   computeKPIs, computeActivityStats, computeUserStats, computeScoreDistribution,
 } from '../lib/analytics'
@@ -79,7 +79,9 @@ export default function OverviewPage() {
     sims, activities, members, admins,
     refetch,
   } = useDashboardData()
-  // RolPlay not active for Apotex — video_answers table is empty (0 records)
+  // Bridge: full data source — ALL 767 sessions across ALL 11 activities
+  // Supplements simulator (436 coaching sessions) with Visita Médica APECS data
+  const bridgeOv = useBridgeOverview()
 
   // ── Date range ──────────────────────────────
   const [from, setFrom] = useState('')
@@ -290,10 +292,35 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Simulator KPIs */}
+      {/* ── FULL Platform Summary (Bridge — ALL 767 sessions, ALL 11 activities) ── */}
+      {bridgeOv.data && (
+        <div className="rounded-xl border border-violet/30 bg-violet/5 dark:bg-violet/10 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-violet mb-3 flex items-center gap-1.5">
+            <Brain className="w-3 h-3" />
+            {es ? 'Plataforma Completa — Todas las Actividades' : 'Full Platform — All Activities'}
+            <span className="ml-2 text-[10px] font-normal text-slate-500 normal-case">
+              {es ? '(incluye Visita Médica APECS)' : '(includes Visita Médica APECS)'}
+            </span>
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <KpiCard icon={PlayCircle}   label={es ? 'Total Sesiones' : 'Total Sessions'}    value={bridgeOv.data.total_sessions}   sub={es ? 'todas actividades' : 'all activities'} color="violet" />
+            <KpiCard icon={Users}        label={es ? 'Usuarios Activos' : 'Active Users'}     value={bridgeOv.data.unique_users}     sub={es ? 'con al menos 1 sesión' : 'with ≥1 session'} color="indigo" />
+            <KpiCard icon={BarChart3}    label={es ? 'Promedio Global' : 'Global Avg'}        value={`${bridgeOv.data.avg_score}%`}  sub={es ? 'todas actividades' : 'all activities'} color="accent" />
+            <KpiCard icon={CheckCircle2} label={es ? 'Tasa Aprobación' : 'Pass Rate'}         value={`${bridgeOv.data.pass_rate_pct}%`} sub={es ? 'umbral ≥70%' : 'threshold ≥70%'} color="pass" />
+            <KpiCard icon={Users}        label={es ? 'Miembros' : 'Members'}                  value={bridgeOv.data.total_members}   sub={es ? 'plataforma' : 'platform'} color="indigo" />
+            <KpiCard icon={Brain}        label={es ? 'Actividades Activas' : 'Active Activities'} value={bridgeOv.data.active_activities} sub={es ? 'todas actividades' : 'all activities'} color="violet" />
+          </div>
+        </div>
+      )}
+
+      {/* ── Coaching Simulator KPIs (6 IDs via simulador_Asistentes) ── */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-600 mb-2 flex items-center gap-1.5">
-          <PlayCircle className="w-3 h-3" />{es ? 'Simulador' : 'Simulator'}
+          <PlayCircle className="w-3 h-3" />
+          {es ? 'Simulador de Coaching (Q&A detallado)' : 'Coaching Simulator (detailed Q&A)'}
+          <span className="ml-2 text-[10px] font-normal normal-case text-slate-500">
+            {es ? 'DM + Coach Evaluador + Coach Maestro' : 'DM + Coach Evaluador + Coach Maestro'}
+          </span>
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard icon={PlayCircle}   label={t('kpi_total_sims')}      value={activeKpis!.totalSimulations}   sub={t('sub_across_activities')} color="accent" />
@@ -302,8 +329,6 @@ export default function OverviewPage() {
           <KpiCard icon={Users}        label={t('kpi_active_advisors')} value={activeKpis!.activeAdvisors}     sub={t('sub_with_simulations')}  color="indigo" />
         </div>
       </div>
-
-      {/* RolPlay KPIs section removed — RolPlay module not active for Apotex (video_answers = 0) */}
 
       {/* Charts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
