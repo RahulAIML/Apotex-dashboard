@@ -82,7 +82,7 @@ export default function SettingsPage() {
             { label: es ? 'Nombre' : 'Name', value: es ? 'Apotex Analytics Intelligence' : 'Apotex Analytics Intelligence' },
             { label: es ? 'Versión' : 'Version', value: '2.0.0' },
             { label: es ? 'Motor Simulador' : 'Simulator Engine', value: 'serv.aux-rolplay.com' },
-            { label: es ? 'Motor Rolplay' : 'Rolplay Engine', value: 'rolplay.net' },
+            { label: es ? 'Motor RolPlay' : 'RolPlay Engine', value: 'rolplay.net' },
             { label: es ? 'Asistente IA' : 'AI Assistant', value: 'Gemini 2.0 Flash' },
           ].map((row) => (
             <div key={row.label} className="flex items-center justify-between text-sm border-b border-line/20 pb-2 last:border-0 last:pb-0">

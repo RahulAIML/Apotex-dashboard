@@ -1,7 +1,7 @@
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { useDashboardData } from '../hooks/useDashboardData'
-// Bridge data available on /rolplay page
+// RolPlay not active for Apotex — video_answers empty
 import { FileDown, BarChart3, Mic2, Users, Activity } from 'lucide-react'
 
 function ReportCard({
@@ -36,7 +36,7 @@ export default function ReportsPage() {
   const t = useTranslation(language)
   const { kpis } = useDashboardData()
   const simCount = kpis?.totalSimulations ?? 0
-  const rpCount = 0 // Bridge data available on /rolplay page
+  const rpCount = 0 // RolPlay not active for Apotex — video_answers empty
 
   function downloadCSV(rows: string[][], filename: string) {
     const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
@@ -64,22 +64,8 @@ export default function ReportsPage() {
     )
   }
 
-  function exportRpSummary() {
-    const sessions = rpFact.data ?? []
-    if (!sessions.length) return
-    const rows: string[][] = [[
-      'ID', 'Usuario', 'Administrador', 'Actividad', 'Fecha',
-      'Puntos_Totales', 'Porcentaje_Robin', 'Porcentaje_Facial',
-      'Porcentaje_Voz', 'Porcentaje_PPM', 'Num_MCs_Hechos',
-    ]]
-    sessions.forEach((s) => rows.push([
-      String(s.ID_Ejercicio_Rub), s.Usuario_Nombre, s.Administrador_Nombre,
-      s.Actividad_Rub_Nombre, s.Fecha, s.Puntos_Totales,
-      s.Porcentaje_Robin, s.Porcentaje_Facial, s.Porcentaje_Voz,
-      s.Porcentaje_Palabras_por_Minuto, String(s.Num_MCs_Hechos),
-    ]))
-    downloadCSV(rows, `apotex_sessions_${new Date().toISOString().split('T')[0]}.csv`)
-  }
+  // RolPlay not active for Apotex — this export is disabled
+  function exportRpSummary() { return }
 
   const es = language === 'es'
 
@@ -94,7 +80,7 @@ export default function ReportsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { icon: BarChart3, label: es ? 'Simulaciones' : 'Simulations', value: simCount.toLocaleString() },
-          { icon: Mic2, label: es ? 'Sesiones Rolplay' : 'Rolplay Sessions', value: rpCount.toLocaleString() },
+          { icon: Mic2, label: es ? 'Sesiones RolPlay' : 'RolPlay Sessions', value: rpCount.toLocaleString() },
           { icon: Users, label: es ? 'Asesores Activos' : 'Active Advisors', value: String(kpis?.activeAdvisors ?? 0) },
           { icon: Activity, label: es ? 'Actividades' : 'Activities', value: String(kpis?.totalActivities ?? 0) },
         ].map((item) => (
@@ -145,7 +131,7 @@ export default function ReportsPage() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-200 mb-1">
-                {es ? 'Sesiones Rolplay Completas' : 'Full Rolplay Sessions'}
+                {es ? 'Sesiones RolPlay Completas' : 'Full RolPlay Sessions'}
               </p>
               <p className="text-xs text-slate-500">
                 {es ? `Todas las sesiones con dimensiones IA — ${rpCount} registros` : `All sessions with AI dimensions — ${rpCount} records`}
@@ -170,7 +156,7 @@ export default function ReportsPage() {
           />
           <ReportCard
             icon={Mic2}
-            title={es ? 'Análisis de Rolplay por Actividad' : 'Rolplay Analysis by Activity'}
+            title={es ? 'Análisis de RolPlay por Actividad' : 'RolPlay Analysis by Activity'}
             description={es ? 'Desglose de puntajes IA por actividad y criterios MC.' : 'AI score breakdown by activity and MC criteria.'}
             tag={es ? 'Próximamente' : 'Coming soon'}
           />

@@ -8,8 +8,7 @@ import LeaderboardPage from './pages/LeaderboardPage'
 import ActivitiesPage from './pages/ActivitiesPage'
 import OrganizationPage from './pages/OrganizationPage'
 import CoachingPage from './pages/CoachingPage'
-import RoleplayPage from './pages/RoleplayPage'
-import SupervisorsPage from './pages/SupervisorsPage'
+// RolPlay + Supervisors pages removed — Apotex has no RolPlay data (video_answers = 0)
 import BusinessLinesPage from './pages/BusinessLinesPage'
 import ReportsPage from './pages/ReportsPage'
 import SettingsPage from './pages/SettingsPage'
@@ -36,8 +35,7 @@ export default function App() {
               <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/organization" element={<OrganizationPage />} />
               <Route path="/coaching" element={<CoachingPage />} />
-              <Route path="/rolplay" element={<RoleplayPage />} />
-              <Route path="/supervisors" element={<SupervisorsPage />} />
+              {/* /rolplay and /supervisors removed — Apotex has no RolPlay module */}
               <Route path="/business-lines" element={<BusinessLinesPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/settings" element={<SettingsPage />} />

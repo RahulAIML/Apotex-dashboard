@@ -30,13 +30,7 @@ const NAV_GROUPS: { labelKey: string; items: NavItem[] }[] = [
       { to: '/leaderboard', icon: Trophy, key: 'nav_leaderboard' },
     ],
   },
-  {
-    labelKey: 'nav_roleplay_group',
-    items: [
-      { to: '/rolplay', icon: Mic2, key: 'nav_roleplay' },
-      { to: '/supervisors', icon: UserCheck, key: 'nav_supervisors' },
-    ],
-  },
+  // RolPlay (video coaching + Robin AI) not deployed for Apotex — section removed
   {
     labelKey: 'nav_platform',
     items: [

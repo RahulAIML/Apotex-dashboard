@@ -55,7 +55,7 @@ const PAGE_LABELS: Record<string, { en: string; es: string }> = {
   '/leaderboard':    { en: 'Leaderboard',                 es: 'Clasificación' },
   '/activities':     { en: 'Activities',                  es: 'Actividades' },
   '/organization':   { en: 'Organization',                es: 'Organización' },
-  '/rolplay':        { en: 'Rolplay Intelligence',        es: 'Inteligencia Rolplay' },
+  '/rolplay':        { en: 'RolPlay Intelligence',        es: 'Inteligencia RolPlay' },
   '/supervisors':    { en: 'Supervisors',                 es: 'Supervisores' },
   '/business-lines': { en: 'Business Lines',              es: 'Líneas de Negocio' },
   '/reports':        { en: 'Reports',                     es: 'Reportes' },
@@ -291,7 +291,7 @@ export function AIAssistant() {
       ctx +=
         'DASHBOARD DATA: Currently loading or unavailable.\n' +
         'You can still answer general questions about sales enablement,\n' +
-        'coaching best practices, or the Apotex Rolplay platform.'
+        'coaching best practices, or the Apotex RolPlay platform.'
     }
 
     return ctx

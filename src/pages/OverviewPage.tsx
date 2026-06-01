@@ -79,9 +79,7 @@ export default function OverviewPage() {
     sims, activities, members, admins,
     refetch,
   } = useDashboardData()
-  // Bridge overview (replaces Roleplay fact data — Apotex uses bridge)
-  const rpFact        = { data: [] as any[], isLoading: false }
-  const rpActividades = { data: [] as any[] }
+  // RolPlay not active for Apotex — video_answers table is empty (0 records)
 
   // ── Date range ──────────────────────────────
   const [from, setFrom] = useState('')
@@ -152,9 +150,6 @@ export default function OverviewPage() {
     return trend.filter((p) => inDateRange(p.date, from, to))
   }, [trend, from, to])
 
-  // Apotex: advanced KPIs are on /rolplay page via bridge
-  const rpSessions: any[] = []
-  const rpKpis = null
 
   // ── CSV exports ─────────────────────────────
   function exportSimCSV() {
@@ -171,22 +166,7 @@ export default function OverviewPage() {
     ], `apotex_sim_overview_${csvDate()}.csv`)
   }
 
-  function exportRpCSV() {
-    const sessions = rpFact.data ?? []
-    if (!sessions.length) return
-    const rows: (string | number)[][] = [[
-      'ID', es ? 'Usuario' : 'User', es ? 'Sucursal' : 'Branch', es ? 'Actividad' : 'Activity',
-      es ? 'Fecha' : 'Date', es ? 'Puntaje Total' : 'Total Score',
-      'Robin %', 'Facial %', es ? 'Voz %' : 'Voice %', 'PPM %',
-    ]]
-    sessions.forEach((s) => rows.push([
-      s.ID_Ejercicio_Rub, s.Usuario_Nombre, s.Administrador_Nombre,
-      s.Actividad_Rub_Nombre, s.Fecha, s.Puntos_Totales,
-      s.Porcentaje_Robin, s.Porcentaje_Facial, s.Porcentaje_Voz,
-      s.Porcentaje_Palabras_por_Minuto,
-    ]))
-    downloadCSV(rows, `apotex_sessions_${csvDate()}.csv`)
-  }
+  // exportRpCSV removed — RolPlay not active for Apotex
 
   // ── Loading / error ──────────────────────────
   if (isLoading) {
@@ -306,15 +286,7 @@ export default function OverviewPage() {
             <Download className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{es ? 'Sim. CSV' : 'Sim. CSV'}</span>
           </button>
-          <button
-            onClick={exportRpCSV}
-            disabled={!(rpFact.data?.length)}
-            className="flex items-center gap-1.5 text-xs text-violet hover:text-violet/80 border border-violet/30 hover:border-violet/50 rounded-lg px-2 sm:px-3 py-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Roleplay CSV"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{es ? 'RP CSV' : 'RP CSV'}</span>
-          </button>
+          {/* RolPlay CSV removed — RolPlay not active for Apotex */}
         </div>
       </div>
 
@@ -331,20 +303,7 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Roleplay KPIs */}
-      {rpKpis && (
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-600 mb-2 flex items-center gap-1.5">
-            <Mic2 className="w-3 h-3" />{es ? 'Rolplay IA' : 'Rolplay AI'}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Mic2}     label={t('rp_kpi_sessions')}  value={rpKpis.totalSessions.toLocaleString()} sub={t('rp_kpi_sessions_sub')}  color="violet" />
-            <KpiCard icon={Brain}    label={t('rp_dim_robin')}      value={`${rpKpis.avgRobinPct}%`}              sub={es ? 'promedio IA' : 'AI avg'} color="indigo" />
-            <KpiCard icon={BarChart3} label={t('rp_kpi_avg_score')} value={`${rpKpis.avgTotalScore}`}             sub={t('rp_kpi_avg_score_sub')} color="accent" />
-            <KpiCard icon={Users}    label={t('rp_kpi_users')}      value={rpKpis.activeUsers}                    sub={t('rp_kpi_users_sub')}     color="pass" />
-          </div>
-        </div>
-      )}
+      {/* RolPlay KPIs section removed — RolPlay module not active for Apotex (video_answers = 0) */}
 
       {/* Charts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

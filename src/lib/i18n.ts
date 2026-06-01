@@ -105,7 +105,7 @@ const t = {
 
     // AI Assistant
     ai_title: 'Asistente IA',
-    ai_subtitle: 'Impulsado por Rolplay',
+    ai_subtitle: 'Impulsado por RolPlay',
 
     ai_placeholder: 'Pregunta sobre el rendimiento del equipo...',
     ai_greeting: '¡Hola! Soy tu asistente de analytics de Apotex. Puedo ayudarte a analizar el rendimiento del equipo, identificar áreas de mejora y generar perspectivas sobre las simulaciones. ¿En qué te puedo ayudar?',
@@ -147,7 +147,7 @@ const t = {
     expand: 'Expandir',
     copy: 'Copiar',
 
-    // Rolplay Intelligence
+    // RolPlay Intelligence
     nav_roleplay: 'Analytics Avanzado',
     nav_supervisors: 'Equipos',
     nav_simulator: 'Simulador',
@@ -174,7 +174,7 @@ const t = {
     page_supervisors_title: 'Supervisores',
     page_supervisors_subtitle: 'Rendimiento por supervisor y sucursal',
 
-    rp_kpi_sessions: 'Sesiones Rolplay',
+    rp_kpi_sessions: 'Sesiones RolPlay',
     rp_kpi_sessions_sub: 'total de ejercicios',
     rp_kpi_avg_score: 'Puntaje Promedio',
     rp_kpi_avg_score_sub: 'puntos totales',
@@ -195,7 +195,7 @@ const t = {
     rp_score_dist: 'Distribución de Puntajes',
     rp_criteria_title: 'Cumplimiento de Criterios (MC)',
     rp_criteria_sub: 'Porcentaje de criterios cumplidos por sesión',
-    rp_top_performers: 'Mejores Desempeños — Rolplay',
+    rp_top_performers: 'Mejores Desempeños — RolPlay',
     rp_sessions_label: 'sesiones',
     rp_legend_total: 'Puntaje Total',
 
@@ -317,7 +317,7 @@ const t = {
     page_detail_subtitle: 'Full conversational interaction analysis',
 
     ai_title: 'AI Assistant',
-    ai_subtitle: 'Powered by Rolplay',
+    ai_subtitle: 'Powered by RolPlay',
     ai_placeholder: 'Ask about team performance...',
     ai_greeting: "Hello! I'm your Apotex Analytics assistant. I can help you analyze team performance, identify improvement areas, and generate insights about simulations. How can I help?",
     ai_no_key: 'Set VITE_GEMINI_API_KEY in your .env file to enable the AI Assistant.',
@@ -357,7 +357,7 @@ const t = {
     expand: 'Expand',
     copy: 'Copy',
 
-    // Rolplay Intelligence
+    // RolPlay Intelligence
     nav_roleplay: 'Advanced Analytics',
     nav_supervisors: 'Teams',
     nav_simulator: 'Simulator',
@@ -379,12 +379,12 @@ const t = {
     page_settings_title: 'Settings',
     page_settings_subtitle: 'Platform preferences',
 
-    page_roleplay_title: 'Rolplay Intelligence',
+    page_roleplay_title: 'RolPlay Intelligence',
     page_roleplay_subtitle: 'AI-driven conversational rolplay session analytics',
     page_supervisors_title: 'Supervisors',
     page_supervisors_subtitle: 'Performance by supervisor and branch',
 
-    rp_kpi_sessions: 'Rolplay Sessions',
+    rp_kpi_sessions: 'RolPlay Sessions',
     rp_kpi_sessions_sub: 'total exercises',
     rp_kpi_avg_score: 'Average Score',
     rp_kpi_avg_score_sub: 'total points',
@@ -405,7 +405,7 @@ const t = {
     rp_score_dist: 'Score Distribution',
     rp_criteria_title: 'Criteria Fulfillment (MC)',
     rp_criteria_sub: 'Percentage of criteria met per session',
-    rp_top_performers: 'Top Performers — Rolplay',
+    rp_top_performers: 'Top Performers — RolPlay',
     rp_sessions_label: 'sessions',
     rp_legend_total: 'Total Score',
 
