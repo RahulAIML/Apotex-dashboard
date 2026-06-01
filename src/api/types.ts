@@ -20,7 +20,8 @@ export interface ActivitiesResponse {
 // ─────────────────────────────────────────────
 export interface Simulation {
   Calificacion: number
-  Diagnostico_Final: 'Si' | 'No' | null
+  // Apotex actual values: 'ALTO'|'MEDIO'|'BAJO'|'NO'|'SI'|text (Coach Maestro AI feedback)
+  Diagnostico_Final: string | null
   Fecha_y_Hora: string
   ID_Caso_de_Uso: number
   ID_Sim: number

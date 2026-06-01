@@ -2,7 +2,7 @@ import type { Activity, Administrator, Member, Simulation } from '../api/types'
 // re-export so pages can import directly
 export type { Simulation }
 
-export const PASS_THRESHOLD = 60
+export const PASS_THRESHOLD = 70  // Apotex standard pass threshold
 
 // ─────────────────────────────────────────────
 // Test / demo user blocklist
@@ -77,26 +77,39 @@ function pct(part: number, total: number): number {
   return Math.round((part / total) * 100)
 }
 
-/** True only for numeric 0/1 interaction values — excludes "No aplica" and null */
-function isApplicable(v: unknown): v is number {
-  return typeof v === 'number'
-}
-
-const INTERACTION_KEYS = ['Puntos_1','Puntos_2','Puntos_3','Puntos_4','Puntos_5','Puntos_6'] as const
-
-/** Count of applicable (numeric) interactions for one simulation */
-function countApplicable(s: Simulation): number {
-  return INTERACTION_KEYS.filter((k) => isApplicable(s[k])).length
-}
-
 /**
- * Correct avg score: total points earned / total applicable interactions.
- * e.g. 100 pts across 120 interactions = 83%.
+ * APOTEX SCORING MODEL
+ * ─────────────────────────────────────────────────────────────
+ * The `Calificacion` field (0–100) IS the score for all sessions.
+ *
+ * Activity types and their scoring:
+ *   Coach Evaluador (71,111,128): Calificacion = Puntos_Totales/50 × 100
+ *   Coach Maestro   (174,175,176): Calificacion = 0 in simulator
+ *                                  (actual score lives in bridge/simulador_ventas_callback)
+ *
+ * Pass threshold = 70% (based on bridge data and Apotex standards).
+ *
+ * DO NOT use the Gentera formula (Puntos_Totales / applicable_interactions × 100)
+ * — for Apotex, Coach Maestro sessions have Puntos_Totales=0 and no Puntos_1..6,
+ * which causes totalEvts≈107 vs totalPts=5098 → result=4764% (the bug seen in prod).
  */
+export const APOTEX_PASS_THRESHOLD = 70
+
+/** Sessions that have a real score (Calificacion > 0) */
+function scoredSims(sims: Simulation[]): Simulation[] {
+  return sims.filter(s => s.Calificacion != null && s.Calificacion > 0)
+}
+
+/** Average of Calificacion for sessions that have a real score */
 function avgScore(sims: Simulation[]): number {
-  const totalPts  = sims.reduce((sum, s) => sum + s.Puntos_Totales, 0)
-  const totalEvts = sims.reduce((sum, s) => sum + countApplicable(s), 0)
-  return pct(totalPts, totalEvts)
+  const scored = scoredSims(sims)
+  if (!scored.length) return 0
+  return Math.round(scored.reduce((sum, s) => sum + s.Calificacion, 0) / scored.length)
+}
+
+/** A session passes if Calificacion >= 70 */
+function isPass(s: Simulation): boolean {
+  return s.Calificacion != null && s.Calificacion >= APOTEX_PASS_THRESHOLD
 }
 
 // ─────────────────────────────────────────────
@@ -123,23 +136,25 @@ export function computeKPIs(
   members: Member[],
   admins: Administrator[],
 ): DashboardKPIs {
-  const passCount = sims.filter((s) => s.Diagnostico_Final === 'Si').length
-  const advisors = new Set(sims.map((s) => s.Usuario_Nombre))
-  const scores = sims.map((s) => s.Calificacion)
+  // Pass/fail based on Calificacion >= 70 (Apotex standard)
+  const passCount  = sims.filter(isPass).length
+  const scored     = scoredSims(sims)          // sessions with real score
+  const advisors   = new Set(sims.map((s) => s.Usuario_Nombre))
+  const scores     = scored.map((s) => s.Calificacion)
 
   return {
     totalSimulations: sims.length,
-    averageScore: avgScore(sims),
-    passRate: pct(passCount, sims.length),
-    activeAdvisors: advisors.size,
-    totalActivities: activities.length,
-    totalMembers: members.length,
-    totalAdmins: admins.filter((a) => a.rpa_profile_type === 'admin').length,
+    averageScore:     avgScore(sims),                               // avg of scored sessions only
+    passRate:         pct(passCount, scored.length),                // % of scored sessions passing
+    activeAdvisors:   advisors.size,
+    totalActivities:  activities.length,
+    totalMembers:     members.length,
+    totalAdmins:      admins.filter((a) => a.rpa_profile_type === 'admin').length,
     totalSupervisors: admins.filter((a) => a.rpa_profile_type === 'supervisor').length,
-    bestScore: scores.length ? Math.max(...scores) : 0,
-    worstScore: scores.length ? Math.min(...scores) : 0,
+    bestScore:        scores.length ? Math.max(...scores) : 0,
+    worstScore:       scores.length ? Math.min(...scores) : 0,
     passCount,
-    failCount: sims.length - passCount,
+    failCount:        scored.length - passCount,
   }
 }
 
@@ -181,20 +196,22 @@ export interface TrendPoint {
 export function computeTrend(sims: Simulation[]): TrendPoint[] {
   const byDate: Record<string, Simulation[]> = {}
   sims.forEach((s) => {
-    const date = s.Fecha_y_Hora.split('T')[0]
+    const date = s.Fecha_y_Hora?.split('T')[0]
+    if (!date) return
     if (!byDate[date]) byDate[date] = []
     byDate[date].push(s)
   })
   return Object.entries(byDate)
-    .map(([date, group]) => ({
-      date,
-      avgScore: Math.round(avg(group.map((s) => s.Calificacion))),
-      count: group.length,
-      passRate: pct(
-        group.filter((s) => s.Diagnostico_Final === 'Si').length,
-        group.length,
-      ),
-    }))
+    .map(([date, group]) => {
+      const scored = scoredSims(group)
+      const passCount = group.filter(isPass).length
+      return {
+        date,
+        avgScore: avgScore(group),                       // avg of scored sessions only
+        count:    group.length,
+        passRate: pct(passCount, scored.length || 1),   // pass% among scored sessions
+      }
+    })
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
@@ -210,19 +227,20 @@ export interface RoundStat {
 }
 
 export function computeRoundStats(sims: Simulation[]): RoundStat[] {
+  // Only Coach Evaluador sessions (71,111,128) have per-interaction points
   return [1, 2, 3, 4, 5, 6].map((i) => {
     const key = `Puntos_${i}` as keyof Simulation
     const values = sims
       .map((s) => s[key])
-      .filter(isApplicable)            // excludes "No aplica" and null
+      .filter((v): v is number => typeof v === 'number' && !isNaN(v))
     return {
       round: i,
-      label: `I${i}`,                  // I = Interaction
-      avg: values.length ? Math.round(avg(values) * 100) / 100 : 0,
+      label: `I${i}`,
+      avg:      values.length ? Math.round(avg(values) * 100) / 100 : 0,
       passRate: values.length ? pct(values.filter((v) => v > 0).length, values.length) : 0,
-      count: values.length,
+      count:    values.length,
     }
-  }).filter((r) => r.count > 0)       // only include interactions that have real data
+  }).filter((r) => r.count > 0)
 }
 
 // ─────────────────────────────────────────────
@@ -252,16 +270,17 @@ export function computeActivityStats(
   return Object.entries(byActivity).map(([id, group]) => {
     const numId = Number(id)
     const act = actMap.get(numId)
-    const passCount = group.filter((s) => s.Diagnostico_Final === 'Si').length
+    const scored    = scoredSims(group)
+    const passCount = group.filter(isPass).length
     return {
       id: numId,
       name: act?.Caso_de_Uso ?? `Activity ${id}`,
       activityType: act?.Actividad_Nombre ?? 'unknown',
       count: group.length,
       avgScore: avgScore(group),
-      passRate: pct(passCount, group.length),
+      passRate: pct(passCount, scored.length || 1),
       passCount,
-      failCount: group.length - passCount,
+      failCount: scored.length - passCount,
     }
   })
 }
@@ -288,15 +307,16 @@ export function computeUserStats(sims: Simulation[]): UserStat[] {
   })
   return Object.entries(byUser)
     .map(([name, group]) => {
-      const passCount = group.filter((s) => s.Diagnostico_Final === 'Si').length
-      const scores = group.map((s) => s.Calificacion)
+      const scored    = scoredSims(group)
+      const passCount = group.filter(isPass).length
+      const scores    = scored.map((s) => s.Calificacion)
       return {
         name,
         userId: group[0].Usuario,
-        count: group.length,
-        avgScore: avgScore(group),
-        passRate: pct(passCount, group.length),
-        bestScore: Math.max(...scores),
+        count:     group.length,
+        avgScore:  avgScore(group),
+        passRate:  pct(passCount, scored.length || 1),
+        bestScore: scores.length ? Math.max(...scores) : 0,
         passCount,
       }
     })
@@ -367,7 +387,7 @@ export function extractFeedback(sims: Simulation[]): FeedbackEntry[] {
   sims.forEach((s) => {
     for (let i = 1; i <= 6; i++) {
       const puntos = s[`Puntos_${i}` as keyof Simulation]
-      if (!isApplicable(puntos)) continue   // skip "No aplica" and null
+      if (typeof puntos !== 'number' || isNaN(puntos)) continue   // skip "No aplica" and null
       const feedback = s[`Retroalimentacion_${i}` as keyof Simulation] as string | null
       if (!feedback) continue
       entries.push({
@@ -377,7 +397,7 @@ export function extractFeedback(sims: Simulation[]): FeedbackEntry[] {
         question: (s[`Pregunta_${i}` as keyof Simulation] as string | null) ?? '',
         response: (s[`Respuesta_${i}` as keyof Simulation] as string | null) ?? '',
         feedback,
-        points: puntos,
+        points: puntos as number,
       })
     }
   })
