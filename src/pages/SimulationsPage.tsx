@@ -8,7 +8,8 @@ import { cn } from '../lib/cn'
 
 export default function SimulationsPage() {
   const { language } = useAppStore()
-  const t = useTranslation(language)
+  const t  = useTranslation(language)
+  const es = language === 'es'
   const { isLoading, isError, sims, activities, refetch } = useDashboardData()
   const [search,     setSearch]     = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -130,34 +131,82 @@ export default function SimulationsPage() {
                         {expanded ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
                       </td>
                     </tr>
-                    {expanded && (
-                      <tr className="bg-surface/50">
-                        <td colSpan={6} className="px-4 py-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {[1, 2, 3, 4, 5, 6].map((r) => {
-                              const q    = s[`Pregunta_${r}` as keyof typeof s] as string | null
-                              const resp = s[`Respuesta_${r}` as keyof typeof s] as string | null
-                              const pts  = s[`Puntos_${r}` as keyof typeof s] as number | string | null
-                              const fb   = s[`Retroalimentacion_${r}` as keyof typeof s] as string | null
-                              if (!q || typeof pts !== 'number') return null
-                              return (
-                                <div key={r} className="card p-3 border border-line/40">
-                                  <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">{t('round')} {r}</span>
-                                    <span className={cn('text-xs font-bold', (pts ?? 0) > 0 ? 'text-success' : 'text-danger')}>
-                                      {pts ?? 0} {t('points')}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-slate-400 mb-1 line-clamp-2">{q}</p>
-                                  {resp && <p className="text-xs text-slate-500 line-clamp-2 mb-1">{resp}</p>}
-                                  {fb && <p className="text-[11px] text-slate-600 bg-surface rounded px-2 py-1">{fb}</p>}
-                                </div>
-                              )
-                            })}
+                    {expanded && (() => {
+                      // Build round cards — show a round if it has ANY content
+                      const roundCards = [1, 2, 3, 4, 5, 6].flatMap((r) => {
+                        const q    = s[`Pregunta_${r}`        as keyof typeof s] as string | null
+                        const resp = s[`Respuesta_${r}`       as keyof typeof s] as string | null
+                        const pts  = s[`Puntos_${r}`          as keyof typeof s] as number | string | null
+                        const fb   = s[`Retroalimentacion_${r}` as keyof typeof s] as string | null
+
+                        const isNa    = (v: string | null | undefined) => !v || v === 'No aplica' || v === 'No Aplica'
+                        const hasData = !isNa(q) || !isNa(resp) || !isNa(fb)
+                        if (!hasData) return []
+
+                        const ptsNum  = typeof pts === 'number' ? pts : null
+                        const ptsText = ptsNum !== null
+                          ? `${ptsNum} ${t('points')}`
+                          : (typeof pts === 'string' && !isNa(pts) ? pts : null)
+
+                        return [(
+                          <div key={r} className="card p-3 border border-line/40">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                {t('round')} {r}
+                              </span>
+                              {ptsText && (
+                                <span className={cn(
+                                  'text-xs font-bold',
+                                  ptsNum !== null
+                                    ? (ptsNum > 0 ? 'text-success' : 'text-danger')
+                                    : 'text-slate-500',
+                                )}>
+                                  {ptsText}
+                                </span>
+                              )}
+                            </div>
+                            {!isNa(q)    && <p className="text-xs text-slate-400 mb-1 line-clamp-3">{q}</p>}
+                            {!isNa(resp) && <p className="text-xs text-slate-300 line-clamp-3 mb-1 border-l-2 border-accent/30 pl-2">{resp}</p>}
+                            {!isNa(fb)   && <p className="text-[11px] text-slate-500 bg-surface rounded px-2 py-1 mt-1 line-clamp-2">{fb}</p>}
                           </div>
-                        </td>
-                      </tr>
-                    )}
+                        )]
+                      })
+
+                      return (
+                        <tr className="bg-surface/50">
+                          <td colSpan={6} className="px-4 py-4">
+                            {roundCards.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {roundCards}
+                              </div>
+                            ) : (
+                              /* Fallback — session has a score but no per-round text stored */
+                              <div className="flex flex-col sm:flex-row items-start gap-4">
+                                <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-line/30 min-w-[180px]">
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-600 mb-0.5">{t('col_score')}</p>
+                                    <p className={cn('text-xl font-bold', hasScore ? (s.Calificacion >= 70 ? 'text-success' : 'text-danger') : 'text-slate-500')}>
+                                      {hasScore ? `${s.Calificacion}%` : '—'}
+                                    </p>
+                                  </div>
+                                </div>
+                                {s.Diagnostico_Final && s.Diagnostico_Final !== 'NO' && (
+                                  <div className="p-3 rounded-lg bg-card border border-line/30 flex-1">
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-600 mb-1">{es ? 'Diagnóstico' : 'Diagnosis'}</p>
+                                    <p className="text-xs text-slate-300 line-clamp-4">{s.Diagnostico_Final}</p>
+                                  </div>
+                                )}
+                                {!s.Diagnostico_Final && (
+                                  <p className="text-xs text-slate-600 italic self-center">
+                                    {es ? 'Sin detalles por ronda disponibles para esta sesión.' : 'No per-round details available for this session.'}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })()}
                   </Fragment>
                 )
               })}
