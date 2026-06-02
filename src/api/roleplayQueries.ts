@@ -37,10 +37,10 @@ export function useBridgeActivitySummary(params?: { date_from?: string; date_to?
   })
 }
 
-export function useBridgeLeaderboard(limit = 100) {
+export function useBridgeLeaderboard(limit = 100, params?: { date_from?: string; date_to?: string }) {
   return useQuery({
-    queryKey: ['bridge_leaderboard', limit],
-    queryFn: () => fetchBridgeLeaderboard(limit),
+    queryKey: ['bridge_leaderboard', limit, params],
+    queryFn: () => fetchBridgeLeaderboard(limit, params),
     staleTime: STALE,
   })
 }
@@ -129,7 +129,7 @@ export function useBridgeTags() {
 export function useBridgeData(params?: { date_from?: string; date_to?: string }) {
   const overview    = useBridgeOverview(params)
   const activities  = useBridgeActivitySummary(params)
-  const leaderboard = useBridgeLeaderboard(100)
+  const leaderboard = useBridgeLeaderboard(100, params)
   const trend       = useBridgeTrend('month', params)
   const distribution= useBridgeDistribution(params)
   const completion  = useBridgeCompletion()

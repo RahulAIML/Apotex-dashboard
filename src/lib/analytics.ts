@@ -177,6 +177,7 @@ export function computeScoreDistribution(sims: Simulation[]): ScoreBucket[] {
     { label: '81–100', min: 81, max: 100, count: 0 },
   ]
   sims.forEach((s) => {
+    if (s.Calificacion == null || s.Calificacion === 0) return  // skip unscored (Coach Maestro)
     const b = buckets.find((bk) => s.Calificacion >= bk.min && s.Calificacion <= bk.max)
     if (b) b.count++
   })
@@ -312,7 +313,7 @@ export function computeUserStats(sims: Simulation[]): UserStat[] {
       const scores    = scored.map((s) => s.Calificacion)
       return {
         name,
-        userId: group[0].Usuario,
+        userId: group[0].Usuario ?? '',
         count:     group.length,
         avgScore:  avgScore(group),
         passRate:  pct(passCount, scored.length || 1),

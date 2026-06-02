@@ -1,4 +1,7 @@
+import { useState, useMemo } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { computeRoundStats, computeActivityStats } from '../lib/analytics'
+import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import {
@@ -184,7 +187,20 @@ export default function ConversationalPage() {
   const tt = useTooltipColors()
   const es = language === 'es'
 
-  const { isLoading, isError, roundStats, actStats, refetch } = useDashboardData()
+  const { isLoading, isError, sims, activities, refetch } = useDashboardData()
+  const [from, setFrom] = useState('')
+  const [to,   setTo]   = useState('')
+
+  const filteredSims = useMemo(() => {
+    if (!from && !to) return sims
+    return sims.filter((s) => {
+      const date = s.Fecha_y_Hora?.split('T')[0]
+      return date ? inDateRange(date, from, to) : false
+    })
+  }, [sims, from, to])
+
+  const roundStats = useMemo(() => computeRoundStats(filteredSims),                [filteredSims])
+  const actStats   = useMemo(() => computeActivityStats(filteredSims, activities), [filteredSims, activities])
 
   if (isLoading) {
     return (
@@ -253,9 +269,12 @@ export default function ConversationalPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_conv_title')}</h1>
-        <p className="text-slate-500 text-sm mt-0.5">{t('page_conv_subtitle')}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_conv_title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('page_conv_subtitle')}</p>
+        </div>
+        <DateRangeFilter from={from} to={to} onFrom={setFrom} onTo={setTo} />
       </div>
 
       {/* Summary chips */}

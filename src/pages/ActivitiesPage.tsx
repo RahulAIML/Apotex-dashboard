@@ -1,4 +1,7 @@
+import { useState, useMemo } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { computeActivityStats } from '../lib/analytics'
+import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { Activity, CheckCircle2, XCircle } from 'lucide-react'
@@ -14,20 +17,32 @@ function ActivityBarTooltip({ active, payload, es, c }: { active?: boolean; payl
   return (
     <TooltipShell c={c} minWidth={180}>
       <TTitle text={d.fullName ?? d.name} c={c} />
-      <TRow label={es ? 'Sesiones' : 'Sessions'}      value={d.count}             valueStyle={{ color: d.color }}    c={c} />
-      <TRow label={es ? 'Puntaje Prom.' : 'Avg Score'} value={`${d.avgScore}%`}   valueStyle={{ color: c.accent }}   c={c} />
-      <TRow label={es ? 'Aprobación' : 'Pass Rate'}    value={`${d.passRate}%`}    valueStyle={{ color: '#10B981' }}  c={c} />
+      <TRow label={es ? 'Sesiones' : 'Sessions'}      value={d.count}           valueStyle={{ color: d.color }}   c={c} />
+      <TRow label={es ? 'Puntaje Prom.' : 'Avg Score'} value={`${d.avgScore}%`} valueStyle={{ color: c.accent }}  c={c} />
+      <TRow label={es ? 'Aprobación' : 'Pass Rate'}    value={`${d.passRate}%`}  valueStyle={{ color: '#10B981' }} c={c} />
     </TooltipShell>
   )
 }
 
 export default function ActivitiesPage() {
   const { language } = useAppStore()
-  const t = useTranslation(language)
+  const t  = useTranslation(language)
   const c  = useChartColors()
   const tt = useTooltipColors()
   const es = language === 'es'
-  const { isLoading, isError, actStats, refetch } = useDashboardData()
+  const { isLoading, isError, sims, activities, refetch } = useDashboardData()
+  const [from, setFrom] = useState('')
+  const [to,   setTo]   = useState('')
+
+  const filteredSims = useMemo(() => {
+    if (!from && !to) return sims
+    return sims.filter((s) => {
+      const date = s.Fecha_y_Hora?.split('T')[0]
+      return date ? inDateRange(date, from, to) : false
+    })
+  }, [sims, from, to])
+
+  const actStats = useMemo(() => computeActivityStats(filteredSims, activities), [filteredSims, activities])
 
   if (isLoading) {
     return (
@@ -47,20 +62,23 @@ export default function ActivitiesPage() {
     )
   }
 
-  const data = (actStats ?? []).map((a, i) => ({
-    name: a.name.length > 20 ? a.name.slice(0, 20) + '...' : a.name,
+  const data = actStats.map((a, i) => ({
+    name:     a.name.length > 20 ? a.name.slice(0, 20) + '...' : a.name,
     fullName: a.name,
-    count: a.count,
+    count:    a.count,
     avgScore: a.avgScore,
     passRate: a.passRate,
-    color: COLORS[i % COLORS.length],
+    color:    COLORS[i % COLORS.length],
   }))
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_act_title')}</h1>
-        <p className="text-slate-500 text-sm mt-0.5">{t('page_act_subtitle')}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_act_title')}</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{t('page_act_subtitle')}</p>
+        </div>
+        <DateRangeFilter from={from} to={to} onFrom={setFrom} onTo={setTo} />
       </div>
 
       {/* Chart */}
@@ -70,20 +88,11 @@ export default function ActivitiesPage() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 10 }}
-                angle={-30}
-                textAnchor="end"
-                interval={0}
-                height={60}
-              />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" interval={0} height={60} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip content={<ActivityBarTooltip es={es} c={tt} />} wrapperStyle={{ zIndex: 50, outline: 'none' }} cursor={{ fill: c.cursorFill }} />
               <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={28}>
-                {data.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
+                {data.map((entry, index) => <Cell key={index} fill={entry.color} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -92,7 +101,7 @@ export default function ActivitiesPage() {
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {(actStats ?? []).map((a) => (
+        {actStats.map((a) => (
           <div key={a.id} className="card p-5 card-interactive">
             <div className="flex items-start justify-between mb-3">
               <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -116,12 +125,8 @@ export default function ActivitiesPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 mt-3 text-xs">
-              <span className="flex items-center gap-1 text-success">
-                <CheckCircle2 className="w-3 h-3" /> {a.passCount}
-              </span>
-              <span className="flex items-center gap-1 text-danger">
-                <XCircle className="w-3 h-3" /> {a.failCount}
-              </span>
+              <span className="flex items-center gap-1 text-success"><CheckCircle2 className="w-3 h-3" /> {a.passCount}</span>
+              <span className="flex items-center gap-1 text-danger"><XCircle className="w-3 h-3" /> {a.failCount}</span>
             </div>
           </div>
         ))}

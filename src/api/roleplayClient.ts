@@ -44,8 +44,8 @@ export async function fetchBridgeActivitySummary(params?: { date_from?: string; 
   return d.activities
 }
 
-export async function fetchBridgeLeaderboard(limit = 100) {
-  const d = await get<{ leaderboard: BridgeLeaderboardUser[] }>('kpi.leaderboard', { limit })
+export async function fetchBridgeLeaderboard(limit = 100, params?: { date_from?: string; date_to?: string }) {
+  const d = await get<{ leaderboard: BridgeLeaderboardUser[] }>('kpi.leaderboard', { limit, ...(params ?? {}) })
   // Remove internal Rolplay admin accounts
   return d.leaderboard.filter(u => isApotexMember(u.email))
 }

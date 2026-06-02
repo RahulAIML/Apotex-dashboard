@@ -1,27 +1,39 @@
-import { useState, Fragment } from 'react'
+import { useState, useMemo, Fragment } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
-import { Search, Calendar, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
+import { Search, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '../lib/cn'
 
 export default function SimulationsPage() {
   const { language } = useAppStore()
   const t = useTranslation(language)
   const { isLoading, isError, sims, activities, refetch } = useDashboardData()
-  const [search, setSearch] = useState('')
+  const [search,     setSearch]     = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [from,       setFrom]       = useState('')
+  const [to,         setTo]         = useState('')
 
-  const actMap = new Map(activities.map((a) => [a.ID_Caso_de_Uso, a]))
+  const actMap = useMemo(() => new Map(activities.map((a) => [a.ID_Caso_de_Uso, a])), [activities])
 
-  const filtered = sims.filter((s) => {
-    const q = search.toLowerCase()
-    return (
-      s.Usuario_Nombre.toLowerCase().includes(q) ||
-      actMap.get(s.ID_Caso_de_Uso)?.Caso_de_Uso?.toLowerCase().includes(q) ||
-      s.Fecha_y_Hora.includes(q)
-    )
-  })
+  const filtered = useMemo(() => {
+    return sims.filter((s) => {
+      // Date range filter
+      if (from || to) {
+        const date = s.Fecha_y_Hora?.split('T')[0]
+        if (!date || !inDateRange(date, from, to)) return false
+      }
+      // Text search
+      const q = search.toLowerCase().trim()
+      if (!q) return true
+      return (
+        (s.Usuario_Nombre ?? '').toLowerCase().includes(q) ||
+        (actMap.get(s.ID_Caso_de_Uso)?.Caso_de_Uso ?? '').toLowerCase().includes(q) ||
+        (s.Fecha_y_Hora ?? '').includes(q)
+      )
+    })
+  }, [sims, from, to, search, actMap])
 
   if (isLoading) {
     return (
@@ -48,8 +60,9 @@ export default function SimulationsPage() {
         <p className="text-slate-500 text-sm mt-0.5">{t('page_sims_subtitle')}</p>
       </div>
 
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
           <input
             value={search}
@@ -58,6 +71,7 @@ export default function SimulationsPage() {
             className="input w-full pl-9"
           />
         </div>
+        <DateRangeFilter from={from} to={to} onFrom={setFrom} onTo={setTo} />
         <span className="text-xs text-slate-600 ml-auto">
           {filtered.length} {t('simulations_count')}
         </span>
@@ -80,6 +94,7 @@ export default function SimulationsPage() {
               {filtered.map((s) => {
                 const expanded = expandedId === s.ID_Sim
                 const activity = actMap.get(s.ID_Caso_de_Uso)
+                const hasScore = s.Calificacion != null && s.Calificacion > 0
                 return (
                   <Fragment key={s.ID_Sim}>
                     <tr
@@ -88,17 +103,20 @@ export default function SimulationsPage() {
                     >
                       <td className="px-4 py-3 text-slate-200 font-medium">{s.Usuario_Nombre}</td>
                       <td className="px-4 py-3 text-slate-400">{activity?.Caso_de_Uso ?? `ID ${s.ID_Caso_de_Uso}`}</td>
-                      <td className="px-4 py-3 text-slate-400 text-xs">{s.Fecha_y_Hora.slice(0, 10)}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{(s.Fecha_y_Hora ?? '').slice(0, 10)}</td>
                       <td className="px-4 py-3">
-                        <span className={cn(
-                          'font-semibold',
-                          s.Calificacion >= 70 ? 'text-success' : 'text-danger'
-                        )}>
-                          {s.Calificacion}%
-                        </span>
+                        {hasScore ? (
+                          <span className={cn('font-semibold', s.Calificacion >= 70 ? 'text-success' : 'text-danger')}>
+                            {s.Calificacion}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
-                        {s.Calificacion >= 70 ? (
+                        {!hasScore ? (
+                          <span className="badge bg-surface text-slate-500 border border-line/30">—</span>
+                        ) : s.Calificacion >= 70 ? (
                           <span className="badge bg-success/10 text-success">
                             <CheckCircle2 className="w-3 h-3" /> {t('status_pass')}
                           </span>
@@ -121,8 +139,6 @@ export default function SimulationsPage() {
                               const resp = s[`Respuesta_${r}` as keyof typeof s] as string | null
                               const pts  = s[`Puntos_${r}` as keyof typeof s] as number | string | null
                               const fb   = s[`Retroalimentacion_${r}` as keyof typeof s] as string | null
-                              // Only show if there is a question AND Puntos is a real number
-                              // Puntos_6 is "No aplica" across all current simulators — skip it
                               if (!q || typeof pts !== 'number') return null
                               return (
                                 <div key={r} className="card p-3 border border-line/40">

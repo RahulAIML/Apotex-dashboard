@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useBridgeOverview } from '../api/roleplayQueries'
 import {
-  computeKPIs, computeActivityStats, computeUserStats, computeScoreDistribution,
+  computeKPIs, computeActivityStats, computeUserStats, computeScoreDistribution, computeTrend,
 } from '../lib/analytics'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
@@ -147,10 +147,11 @@ export default function OverviewPage() {
   const activeScoreDist= useMemo(() => dateActive ? computeScoreDistribution(filteredSims) : scoreDist,        [dateActive, filteredSims, scoreDist])
   const activeUserStats= useMemo(() => dateActive ? computeUserStats(filteredSims) : userStats,                [dateActive, filteredSims, userStats])
 
-  const filteredTrend = useMemo(() => {
-    if (!trend?.length || (!from && !to)) return trend ?? []
-    return trend.filter((p) => inDateRange(p.date, from, to))
-  }, [trend, from, to])
+  // Recompute trend from filteredSims so user filter + date filter both apply
+  const filteredTrend = useMemo(
+    () => dateActive ? computeTrend(filteredSims) : (trend ?? []),
+    [dateActive, filteredSims, trend],
+  )
 
 
   // ── CSV exports ─────────────────────────────
@@ -188,7 +189,7 @@ export default function OverviewPage() {
     )
   }
 
-  if (isError || (!dateActive && !activeKpis)) {
+  if (isError || !activeKpis) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
         <p className="text-slate-400">{t('error')}</p>

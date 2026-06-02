@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { computeUserStats } from '../lib/analytics'
+import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { Trophy, Medal, TrendingUp, TrendingDown, Search, X } from 'lucide-react'
@@ -7,7 +9,19 @@ import { Trophy, Medal, TrendingUp, TrendingDown, Search, X } from 'lucide-react
 export default function LeaderboardPage() {
   const { language } = useAppStore()
   const t = useTranslation(language)
-  const { isLoading, isError, userStats, refetch } = useDashboardData()
+  const { isLoading, isError, sims, refetch } = useDashboardData()
+  const [from, setFrom] = useState('')
+  const [to,   setTo]   = useState('')
+
+  const filteredSims = useMemo(() => {
+    if (!from && !to) return sims
+    return sims.filter((s) => {
+      const date = s.Fecha_y_Hora?.split('T')[0]
+      return date ? inDateRange(date, from, to) : false
+    })
+  }, [sims, from, to])
+
+  const userStats = useMemo(() => computeUserStats(filteredSims), [filteredSims])
 
   if (isLoading) {
     return (
@@ -50,6 +64,7 @@ export default function LeaderboardPage() {
           <p className="text-slate-500 text-sm mt-0.5">{t('page_leader_subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <DateRangeFilter from={from} to={to} onFrom={setFrom} onTo={setTo} />
           {/* Search by advisor name */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
