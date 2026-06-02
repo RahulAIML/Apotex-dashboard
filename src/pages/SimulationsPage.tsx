@@ -144,23 +144,33 @@ export default function SimulationsPage() {
                         if (!hasData) return []
 
                         const ptsNum  = typeof pts === 'number' ? pts : null
+                        // Show "X / 10 pts" so the scale is clear (max per round = 10)
                         const ptsText = ptsNum !== null
-                          ? `${ptsNum} ${t('points')}`
+                          ? `${ptsNum} / 10`
                           : (typeof pts === 'string' && !isNa(pts) ? pts : null)
 
+                        // Color by score quality: 10=green, 5=blue, 2=amber, 0=red
+                        const ptsColor = ptsNum === null   ? 'text-slate-500'
+                                       : ptsNum === 10     ? 'text-success'
+                                       : ptsNum >=  5      ? 'text-accent'
+                                       : ptsNum >=  2      ? 'text-warning'
+                                       :                     'text-danger'
+
+                        // Border accent by score quality
+                        const cardBorder = ptsNum === null   ? 'border-line/40'
+                                         : ptsNum === 10     ? 'border-success/30'
+                                         : ptsNum >=  5      ? 'border-accent/30'
+                                         : ptsNum >=  2      ? 'border-warning/30'
+                                         :                     'border-danger/30'
+
                         return [(
-                          <div key={r} className="card p-3 border border-line/40">
+                          <div key={r} className={cn('card p-3 border', cardBorder)}>
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                                 {t('round')} {r}
                               </span>
                               {ptsText && (
-                                <span className={cn(
-                                  'text-xs font-bold',
-                                  ptsNum !== null
-                                    ? (ptsNum > 0 ? 'text-success' : 'text-danger')
-                                    : 'text-slate-500',
-                                )}>
+                                <span className={cn('text-xs font-bold', ptsColor)}>
                                   {ptsText}
                                 </span>
                               )}
