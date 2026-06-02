@@ -13,6 +13,10 @@ export default function LeaderboardPage() {
   const [from, setFrom] = useState('')
   const [to,   setTo]   = useState('')
 
+  // ALL hooks MUST be declared before any early returns (React rules of hooks)
+  const [search, setSearch] = useState('')
+  const [limitN, setLimitN] = useState<number>(0)
+
   const filteredSims = useMemo(() => {
     if (!from && !to) return sims
     return sims.filter((s) => {
@@ -22,6 +26,18 @@ export default function LeaderboardPage() {
   }, [sims, from, to])
 
   const userStats = useMemo(() => computeUserStats(filteredSims), [filteredSims])
+
+  const allRows = userStats ?? []
+  const rows = useMemo(() => {
+    let result = allRows
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter((u) => u.name.toLowerCase().includes(q))
+    }
+    return limitN > 0 ? result.slice(0, limitN) : result
+  }, [allRows, search, limitN])
+
+  const es = language === 'es'
 
   if (isLoading) {
     return (
@@ -40,21 +56,6 @@ export default function LeaderboardPage() {
       </div>
     )
   }
-
-  const [search, setSearch] = useState('')
-  const [limitN, setLimitN] = useState<number>(0) // 0 = show all
-
-  const allRows = userStats ?? []
-  const rows = useMemo(() => {
-    let result = allRows
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter((u) => u.name.toLowerCase().includes(q))
-    }
-    return limitN > 0 ? result.slice(0, limitN) : result
-  }, [allRows, search, limitN])
-
-  const es = language === 'es'
 
   return (
     <div className="space-y-5">

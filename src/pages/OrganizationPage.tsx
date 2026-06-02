@@ -4,10 +4,26 @@ import { useTranslation } from '../lib/i18n'
 import { Building2, Users, Mail, Shield, UserCheck } from 'lucide-react'
 import type { OrgNode } from '../lib/analytics'
 
+/** Decode HTML entities returned by the API (e.g. &aacute; → á) */
+function decodeHtml(str: string): string {
+  const txt = document.createElement('textarea')
+  txt.innerHTML = str
+  return txt.value
+}
+
+/** Filter out internal Rolplay admin accounts — not relevant for client demo */
+const INTERNAL_EMAIL_PATTERNS = ['rolplay.net', 'apotex-rolplay.net', 'rolplay.com']
+function isInternalAdmin(email: string): boolean {
+  return INTERNAL_EMAIL_PATTERNS.some(p => email.toLowerCase().includes(p))
+}
+
 export default function OrganizationPage() {
   const { language } = useAppStore()
   const t = useTranslation(language)
   const { isLoading, isError, orgTree, members, admins, refetch } = useDashboardData()
+
+  // Filter out internal Rolplay accounts from org tree and counts
+  const clientAdmins = admins.filter(a => !isInternalAdmin(a.rpa_email ?? ''))
 
   if (isLoading) {
     return (
@@ -36,8 +52,8 @@ export default function OrganizationPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon={Shield} label={t('kpi_total_admins')} value={admins.filter((a) => a.rpa_profile_type === 'admin').length} color="accent" />
-        <StatCard icon={UserCheck} label={t('kpi_total_supervisors')} value={admins.filter((a) => a.rpa_profile_type === 'supervisor').length} color="violet" />
+        <StatCard icon={Shield} label={t('kpi_total_admins')} value={clientAdmins.filter((a) => a.rpa_profile_type === 'admin').length} color="accent" />
+        <StatCard icon={UserCheck} label={t('kpi_total_supervisors')} value={clientAdmins.filter((a) => a.rpa_profile_type === 'supervisor').length} color="violet" />
         <StatCard icon={Users} label={t('kpi_total_members')} value={members.length} color="success" />
       </div>
 
@@ -45,9 +61,11 @@ export default function OrganizationPage() {
       <div className="card p-5">
         <h3 className="text-sm font-semibold text-slate-200 mb-4">{t('organization_structure')}</h3>
         <div className="space-y-2">
-          {(orgTree ?? []).map((node) => (
-            <OrgTreeNode key={node.id} node={node} depth={0} />
-          ))}
+          {(orgTree ?? [])
+            .filter(node => !isInternalAdmin(node.email ?? ''))
+            .map((node) => (
+              <OrgTreeNode key={node.id} node={node} depth={0} decodeHtml={decodeHtml} />
+            ))}
         </div>
       </div>
 
@@ -65,14 +83,14 @@ export default function OrganizationPage() {
               </tr>
             </thead>
             <tbody>
-              {members.slice(0, 50).map((m) => {
-                const admin = admins.find((a) => a.rpa_id === m.mb_admin)
+              {members.filter(m => !isInternalAdmin(m.mb_email ?? '')).slice(0, 50).map((m) => {
+                const admin = clientAdmins.find((a) => a.rpa_id === m.mb_admin)
                 return (
                   <tr key={m.mb_id} className="border-b border-line/20 hover:bg-white/[0.02] transition-colors">
-                    <td className="px-4 py-3 text-slate-200 font-medium">{m.mb_fullname}</td>
+                    <td className="px-4 py-3 text-slate-200 font-medium">{decodeHtml(m.mb_fullname ?? '')}</td>
                     <td className="px-4 py-3 max-w-[160px]"><span className="text-slate-400 text-xs block truncate">{m.mb_email}</span></td>
                     <td className="px-4 py-3 text-slate-400 text-xs">{m.mb_designation || t('member')}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{admin?.rpa_full_name ?? '-'}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs">{admin ? decodeHtml(admin.rpa_full_name ?? '') : '-'}</td>
                   </tr>
                 )
               })}
@@ -105,7 +123,7 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
   )
 }
 
-function OrgTreeNode({ node, depth }: { node: OrgNode; depth: number }) {
+function OrgTreeNode({ node, depth, decodeHtml }: { node: OrgNode; depth: number; decodeHtml: (s: string) => string }) {
   const indent = Math.min(depth * 20, 60)
   const iconMap: Record<string, any> = {
     supervisor: Shield,
@@ -125,7 +143,7 @@ function OrgTreeNode({ node, depth }: { node: OrgNode; depth: number }) {
           <Icon className="w-3.5 h-3.5 text-accent" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-slate-200 truncate">{node.name}</p>
+          <p className="text-sm font-medium text-slate-200 truncate">{decodeHtml(node.name ?? '')}</p>
           <p className="text-[11px] text-slate-600 flex items-center gap-1 truncate">
             <Mail className="w-3 h-3 shrink-0" /> <span className="truncate">{node.email}</span>
           </p>
@@ -137,9 +155,11 @@ function OrgTreeNode({ node, depth }: { node: OrgNode; depth: number }) {
       </div>
       {node.children.length > 0 && (
         <div className="border-l border-line/20 ml-5">
-          {node.children.map((child) => (
-            <OrgTreeNode key={child.id} node={child} depth={depth + 1} />
-          ))}
+          {node.children
+            .filter(c => !isInternalAdmin(c.email ?? ''))
+            .map((child) => (
+              <OrgTreeNode key={child.id} node={child} depth={depth + 1} decodeHtml={decodeHtml} />
+            ))}
         </div>
       )}
     </div>

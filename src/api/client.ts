@@ -7,8 +7,10 @@ import type {
 } from './types'
 
 const BASE = '/apotex/api'
-// Apotex use-case IDs: 71·111·128 = Coach Evaluador | 174·175·176 = Coach Maestro
-const IDS = 'id=71&id=111&id=128&id=174&id=175&id=176'
+// Simulator use-case IDs: 71 = DM Apotex (APECS) | 111·128 = Coach Evaluador
+// Coach Maestro (174·175·176) returns Calificacion=0 from simulator API —
+// their scores live in the bridge (simulador_ventas_callback). Excluded here.
+const IDS = 'id=71&id=111&id=128'
 
 async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url)

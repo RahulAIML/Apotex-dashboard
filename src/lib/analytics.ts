@@ -11,15 +11,16 @@ export const PASS_THRESHOLD = 70  // Apotex standard pass threshold
 const TEST_NAME_BLOCKLIST = new Set([
   // Single-name sandbox entries (early pilots with no email)
   'Andrea', 'Glieb', 'lucio', 'César', 'Arqui',
-  'Poncho', 'Chavo', 'Don Juan', 'Protos', 'Caligula',
+  'Poncho', 'Chavo', 'Don Juan', 'Protos', 'Caligula', 'Calígula',
   'Minako', 'Pedro', 'test', 'Test', 'TEST',
   'GLIEB', 'BUSTAMANTE', 'salo', 'Gaby', 'Endir',
-  'Dany', 'Vic', 'Archie', 'Troncoso',
+  'Dany', 'Vic', 'Archie', 'Troncoso', 'gigi',
   // Known internal testers with full names
   'Mario Motta', 'Andrea Campos', 'Glieb 2',
   'Oralia', 'Milka', 'guadalupe castro',
   'Glieb Arquímedes Troncoso Bustamante',
   'Gaby Morales', 'arqui',
+  'Gabriela Gonzalez Munguia',
 ])
 
 // ── Non-Apotex email domain blocklist ─────────────────────────

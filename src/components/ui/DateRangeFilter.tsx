@@ -44,7 +44,7 @@ export function DateRangeFilter({ from, to, onFrom, onTo, label, className }: Pr
           { label: 'Todo', months: null },
           { label: '3M',   months: 3 },
           { label: '6M',   months: 6 },
-          { label: '1A',   months: 12 },
+          { label: '12M',  months: 12 },
         ] as const).map((p) => {
           const active =
             p.months === null
