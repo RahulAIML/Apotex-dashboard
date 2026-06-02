@@ -297,6 +297,7 @@ export interface UserStat {
   passRate: number
   bestScore: number
   passCount: number
+  failCount: number
 }
 
 export function computeUserStats(sims: Simulation[]): UserStat[] {
@@ -319,6 +320,7 @@ export function computeUserStats(sims: Simulation[]): UserStat[] {
         passRate:  pct(passCount, scored.length || 1),
         bestScore: scores.length ? Math.max(...scores) : 0,
         passCount,
+        failCount: scored.length - passCount,
       }
     })
     .sort((a, b) => b.avgScore - a.avgScore)

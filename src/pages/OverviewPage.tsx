@@ -157,16 +157,174 @@ export default function OverviewPage() {
   // ── CSV exports ─────────────────────────────
   function exportSimCSV() {
     if (!activeKpis) return
-    downloadCSV([
-      [es ? 'Métrica' : 'Metric',              es ? 'Valor' : 'Value'],
-      [es ? 'Total Simulaciones' : 'Total Simulations', activeKpis.totalSimulations],
-      [es ? 'Puntaje Promedio'   : 'Average Score',     `${activeKpis.averageScore}%`],
-      [es ? 'Tasa de Aprobación' : 'Pass Rate',         `${activeKpis.passRate}%`],
-      [es ? 'Asesores Activos'   : 'Active Advisors',   activeKpis.activeAdvisors],
-      [es ? 'Aprobados'          : 'Passed',            activeKpis.passCount],
-      [es ? 'Reprobados'         : 'Failed',            activeKpis.failCount],
-      ...(activeActStats ?? []).map((a) => [a.name, a.count]),
-    ], `apotex_sim_overview_${csvDate()}.csv`)
+
+    const actMap     = new Map(activities.map((a) => [a.ID_Caso_de_Uso, a]))
+    // Map email → member so we can enrich rows with branch/city/region
+    const memberMap  = new Map((members ?? []).map((m) => [m.mb_email?.toLowerCase(), m]))
+    const periodLabel = (from || to)
+      ? `${from || '...'} → ${to || '...'}`
+      : (es ? 'Todo el período' : 'All time')
+    const scoredSims = filteredSims.filter((s) => s.Calificacion > 0)
+
+    const rows: (string | number)[][] = []
+
+    // ── 1. KPI Summary ───────────────────────────────────────────
+    rows.push([es ? '=== RESUMEN GENERAL ===' : '=== SUMMARY KPIs ==='])
+    rows.push([es ? 'Período'   : 'Period',   periodLabel])
+    rows.push([es ? 'Exportado' : 'Exported', new Date().toLocaleString()])
+    rows.push([])
+    rows.push([es ? 'Métrica'               : 'Metric',            es ? 'Valor' : 'Value'])
+    rows.push([es ? 'Total Simulaciones'    : 'Total Simulations',  activeKpis.totalSimulations])
+    rows.push([es ? 'Sesiones Calificadas'  : 'Scored Sessions',    scoredSims.length])
+    rows.push([es ? 'Sin Calificación'      : 'Unscored',           activeKpis.totalSimulations - scoredSims.length])
+    rows.push([es ? 'Puntaje Promedio'      : 'Average Score',      `${activeKpis.averageScore}%`])
+    rows.push([es ? 'Tasa de Aprobación'    : 'Pass Rate',          `${activeKpis.passRate}%`])
+    rows.push([es ? 'Aprobados (≥70)'       : 'Passed (≥70)',       activeKpis.passCount])
+    rows.push([es ? 'Reprobados (<70)'      : 'Failed (<70)',       activeKpis.failCount])
+    rows.push([es ? 'Asesores Activos'      : 'Active Advisors',    activeKpis.activeAdvisors])
+    rows.push([])
+
+    // ── 2. Per-Activity ──────────────────────────────────────────
+    rows.push([es ? '=== POR ACTIVIDAD ===' : '=== PER ACTIVITY ==='])
+    rows.push([
+      es ? 'ID Actividad'      : 'Activity ID',
+      es ? 'Actividad'         : 'Activity',
+      es ? 'Tipo'              : 'Type',
+      es ? 'Sesiones'          : 'Sessions',
+      es ? 'Puntaje Promedio'  : 'Avg Score',
+      es ? 'Tasa Aprobación'   : 'Pass Rate',
+      es ? 'Aprobados'         : 'Passed',
+      es ? 'Reprobados'        : 'Failed',
+    ])
+    ;(activeActStats ?? []).forEach((a) => {
+      rows.push([a.id, a.name, a.activityType, a.count, `${a.avgScore}%`, `${a.passRate}%`, a.passCount, a.failCount])
+    })
+    rows.push([])
+
+    // ── 3. Per-Advisor Leaderboard ───────────────────────────────
+    rows.push([es ? '=== POR ASESOR ===' : '=== PER ADVISOR ==='])
+    rows.push([
+      es ? 'Asesor'             : 'Advisor',
+      es ? 'Email'              : 'Email',
+      es ? 'Región'             : 'Region',
+      es ? 'Ciudad'             : 'City',
+      es ? 'Sucursal'           : 'Branch',
+      es ? 'Línea'              : 'Line',
+      es ? 'Simulaciones'       : 'Simulations',
+      es ? 'Puntaje Promedio'   : 'Avg Score',
+      es ? 'Tasa Aprobación'    : 'Pass Rate',
+      es ? 'Mejor Puntaje'      : 'Best Score',
+      es ? 'Aprobados'          : 'Passed',
+      es ? 'Reprobados'         : 'Failed',
+    ])
+    ;(activeUserStats ?? []).forEach((u) => {
+      const m = memberMap.get((u.userId ?? '').toLowerCase())
+      rows.push([
+        u.name,
+        u.userId ?? '',
+        m?.mb_state  ?? '',
+        m?.mb_city   ?? '',
+        m?.mb_branch ?? '',
+        m?.mb_line   ?? '',
+        u.count,
+        `${u.avgScore}%`,
+        `${u.passRate}%`,
+        `${u.bestScore}%`,
+        u.passCount,
+        u.failCount,
+      ])
+    })
+    rows.push([])
+
+    // ── 4. Monthly Trend ─────────────────────────────────────────
+    rows.push([es ? '=== TENDENCIA MENSUAL ===' : '=== MONTHLY TREND ==='])
+    rows.push([es ? 'Mes' : 'Month', es ? 'Sesiones' : 'Sessions', es ? 'Puntaje Promedio' : 'Avg Score'])
+    filteredTrend.forEach((p) => rows.push([p.date, p.count, `${p.avgScore}%`]))
+    rows.push([])
+
+    // ── 5. Full Simulation Detail (every session, every field) ───
+    rows.push([es ? '=== DETALLE COMPLETO — TODAS LAS SIMULACIONES ===' : '=== FULL DETAIL — ALL SIMULATIONS ==='])
+    rows.push([
+      'ID_Sim',
+      es ? 'Asesor'              : 'Advisor',
+      es ? 'Email'               : 'Email',
+      es ? 'Región'              : 'Region',
+      es ? 'Ciudad'              : 'City',
+      es ? 'Sucursal'            : 'Branch',
+      es ? 'Línea'               : 'Line',
+      es ? 'Actividad'           : 'Activity',
+      es ? 'Tipo Actividad'      : 'Activity Type',
+      es ? 'Fecha'               : 'Date',
+      es ? 'Hora'                : 'Time',
+      es ? 'Calificación'        : 'Score',
+      es ? 'Estado'              : 'Status',
+      es ? 'Diagnóstico Final'   : 'Final Diagnosis',
+      es ? 'Puntos_1'            : 'Points_1',
+      es ? 'Puntos_2'            : 'Points_2',
+      es ? 'Puntos_3'            : 'Points_3',
+      es ? 'Puntos_4'            : 'Points_4',
+      es ? 'Puntos_5'            : 'Points_5',
+      es ? 'Puntos_6'            : 'Points_6',
+      es ? 'Puntos_Totales'      : 'Total_Points',
+      es ? 'Respuesta_1'         : 'Answer_1',
+      es ? 'Respuesta_2'         : 'Answer_2',
+      es ? 'Respuesta_3'         : 'Answer_3',
+      es ? 'Respuesta_4'         : 'Answer_4',
+      es ? 'Respuesta_5'         : 'Answer_5',
+      es ? 'Respuesta_6'         : 'Answer_6',
+      es ? 'Retroalimentación_1' : 'Feedback_1',
+      es ? 'Retroalimentación_2' : 'Feedback_2',
+      es ? 'Retroalimentación_3' : 'Feedback_3',
+      es ? 'Retroalimentación_4' : 'Feedback_4',
+      es ? 'Retroalimentación_5' : 'Feedback_5',
+      es ? 'Retroalimentación_6' : 'Feedback_6',
+    ])
+    filteredSims.forEach((s) => {
+      const act    = actMap.get(s.ID_Caso_de_Uso)
+      const m      = memberMap.get((s.Usuario ?? '').toLowerCase())
+      const status = s.Calificacion > 0
+        ? (s.Calificacion >= 70 ? (es ? 'Aprobado' : 'Pass') : (es ? 'Reprobado' : 'Fail'))
+        : (es ? 'Sin calificación' : 'Unscored')
+      const clean  = (v: string | null | undefined) => (v ?? '').replace(/[\n\r]+/g, ' ').trim()
+      const dt     = (s.Fecha_y_Hora ?? '').split('T')
+      rows.push([
+        s.ID_Sim,
+        s.Usuario_Nombre ?? '',
+        s.Usuario        ?? '',
+        m?.mb_state      ?? '',
+        m?.mb_city       ?? '',
+        m?.mb_branch     ?? '',
+        m?.mb_line       ?? '',
+        act?.Caso_de_Uso       ?? `ID ${s.ID_Caso_de_Uso}`,
+        act?.Actividad_Nombre  ?? '',
+        dt[0] ?? '',
+        dt[1]?.slice(0, 5) ?? '',
+        s.Calificacion   ?? 0,
+        status,
+        s.Diagnostico_Final ?? '',
+        s.Puntos_1       ?? '',
+        s.Puntos_2       ?? '',
+        s.Puntos_3       ?? '',
+        s.Puntos_4       ?? '',
+        s.Puntos_5       ?? '',
+        s.Puntos_6       ?? '',
+        s.Puntos_Totales ?? 0,
+        clean(s.Respuesta_1),
+        clean(s.Respuesta_2),
+        clean(s.Respuesta_3),
+        clean(s.Respuesta_4),
+        clean(s.Respuesta_5),
+        clean(s.Respuesta_6),
+        clean(s.Retroalimentacion_1),
+        clean(s.Retroalimentacion_2),
+        clean(s.Retroalimentacion_3),
+        clean(s.Retroalimentacion_4),
+        clean(s.Retroalimentacion_5),
+        clean(s.Retroalimentacion_6),
+      ])
+    })
+
+    downloadCSV(rows, `apotex_completo_${csvDate()}.csv`)
   }
 
   // exportRpCSV removed — RolPlay not active for Apotex
@@ -287,7 +445,7 @@ export default function OverviewPage() {
             title="Simulator CSV"
           >
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{es ? 'Sim. CSV' : 'Sim. CSV'}</span>
+            <span className="hidden sm:inline">{es ? 'Exportar Todo' : 'Export All'}</span>
           </button>
           {/* RolPlay CSV removed — RolPlay not active for Apotex */}
         </div>
