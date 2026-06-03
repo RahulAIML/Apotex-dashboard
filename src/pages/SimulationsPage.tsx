@@ -144,23 +144,22 @@ export default function SimulationsPage() {
                         if (!hasData) return []
 
                         const ptsNum  = typeof pts === 'number' ? pts : null
-                        // Show "X / 10 pts" so the scale is clear (max per round = 10)
-                        const ptsText = ptsNum !== null
-                          ? `${ptsNum} / 10`
-                          : (typeof pts === 'string' && !isNa(pts) ? pts : null)
+                        // Always show score badge: "X / 10" if scored, "— / 10" if not
+                        const ptsText = ptsNum !== null ? `${ptsNum} / 10` : '— / 10'
+                        const ptsScored = ptsNum !== null
 
-                        // Color by score quality: 10=green, 5=blue, 2=amber, 0=red
-                        const ptsColor = ptsNum === null   ? 'text-slate-500'
-                                       : ptsNum === 10     ? 'text-success'
-                                       : ptsNum >=  5      ? 'text-accent'
-                                       : ptsNum >=  2      ? 'text-warning'
-                                       :                     'text-danger'
+                        // Color by score quality: 10=green, 5=blue, 2=amber, 0=red, unscored=slate
+                        const ptsColor = !ptsScored          ? 'text-slate-400'
+                                       : ptsNum === 10       ? 'text-success'
+                                       : ptsNum! >=  5       ? 'text-accent'
+                                       : ptsNum! >=  2       ? 'text-warning'
+                                       :                       'text-danger'
 
                         // Border accent by score quality
-                        const cardBorder = ptsNum === null   ? 'border-line/40'
+                        const cardBorder = !ptsScored        ? 'border-line/40'
                                          : ptsNum === 10     ? 'border-success/30'
-                                         : ptsNum >=  5      ? 'border-accent/30'
-                                         : ptsNum >=  2      ? 'border-warning/30'
+                                         : ptsNum! >=  5     ? 'border-accent/30'
+                                         : ptsNum! >=  2     ? 'border-warning/30'
                                          :                     'border-danger/30'
 
                         return [(
@@ -169,11 +168,9 @@ export default function SimulationsPage() {
                               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                                 {t('round')} {r}
                               </span>
-                              {ptsText && (
-                                <span className={cn('text-xs font-bold', ptsColor)}>
-                                  {ptsText}
-                                </span>
-                              )}
+                              <span className={cn('text-xs font-bold', ptsColor)}>
+                                {ptsText}
+                              </span>
                             </div>
                             {!isNa(q)    && <p className="text-xs text-slate-400 mb-1 line-clamp-3">{q}</p>}
                             {!isNa(resp) && <p className="text-xs text-slate-300 line-clamp-3 mb-1 border-l-2 border-accent/30 pl-2">{resp}</p>}
@@ -182,9 +179,34 @@ export default function SimulationsPage() {
                         )]
                       })
 
+                      // Detect Type B: rounds have content but no numeric per-round scores
+                      const allRoundsUnscored = [1,2,3,4,5].every(r => {
+                        const p = s[`Puntos_${r}` as keyof typeof s]
+                        return p === null || p === undefined || p === 'No aplica' || p === 'No Aplica'
+                      })
+
                       return (
                         <tr className="bg-surface/50">
                           <td colSpan={6} className="px-4 py-4">
+                            {/* Type B summary: total score shown above grid */}
+                            {allRoundsUnscored && s.Puntos_Totales != null && (
+                              <div className="flex items-center gap-2 mb-3 px-1">
+                                <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                                  {es ? 'Puntaje total:' : 'Total score:'}
+                                </span>
+                                <span className={cn('text-sm font-bold', hasScore ? (s.Calificacion >= 70 ? 'text-success' : 'text-danger') : 'text-slate-400')}>
+                                  {s.Puntos_Totales} / 50
+                                </span>
+                                {hasScore && (
+                                  <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded', s.Calificacion >= 70 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger')}>
+                                    {s.Calificacion}%
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-slate-600 italic ml-1">
+                                  {es ? '(puntaje por ronda no disponible)' : '(per-round score not available)'}
+                                </span>
+                              </div>
+                            )}
                             {roundCards.length > 0 ? (
                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {roundCards}
