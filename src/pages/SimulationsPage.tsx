@@ -3,7 +3,7 @@ import { useDashboardData } from '../hooks/useDashboardData'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
-import { Search, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, CheckCircle2, XCircle, ChevronDown, ChevronUp, Info, X } from 'lucide-react'
 import { cn } from '../lib/cn'
 
 export default function SimulationsPage() {
@@ -15,6 +15,7 @@ export default function SimulationsPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [from,       setFrom]       = useState('')
   const [to,         setTo]         = useState('')
+  const [showCriteria, setShowCriteria] = useState(false)
 
   const actMap = useMemo(() => new Map(activities.map((a) => [a.ID_Caso_de_Uso, a])), [activities])
 
@@ -57,9 +58,80 @@ export default function SimulationsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_sims_title')}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_sims_title')}</h1>
+          <button
+            onClick={() => setShowCriteria(v => !v)}
+            className={cn(
+              'flex items-center gap-1 text-xs px-2 py-1 rounded-full border transition-colors',
+              showCriteria
+                ? 'bg-accent/15 border-accent/40 text-accent'
+                : 'bg-surface border-line/40 text-slate-400 hover:text-slate-200 hover:border-line/70'
+            )}
+          >
+            {showCriteria ? <X className="w-3 h-3" /> : <Info className="w-3 h-3" />}
+            {es ? 'Criterios' : 'Criteria'}
+          </button>
+        </div>
         <p className="text-slate-500 text-sm mt-0.5">{t('page_sims_subtitle')}</p>
       </div>
+
+      {/* Passing criteria panel */}
+      {showCriteria && (
+        <div className="card border border-accent/20 p-4 space-y-4 text-sm">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              {es ? 'Criterios de evaluación' : 'Evaluation criteria'}
+            </h2>
+          </div>
+
+          {/* Pass threshold */}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 border border-success/20">
+              <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+              <span className="text-success font-semibold text-xs">{es ? 'Aprobado' : 'Pass'}</span>
+              <span className="text-slate-400 text-xs">≥ 70%</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-danger/10 border border-danger/20">
+              <XCircle className="w-3.5 h-3.5 text-danger shrink-0" />
+              <span className="text-danger font-semibold text-xs">{es ? 'Reprobado' : 'Fail'}</span>
+              <span className="text-slate-400 text-xs">&lt; 70%</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-line/30 text-slate-400 text-xs">
+              {es ? 'Fórmula:' : 'Formula:'}
+              <code className="text-slate-300 font-mono">Puntos_Totales / 50 × 100</code>
+            </div>
+          </div>
+
+          {/* Per-round score scale */}
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">
+              {es ? 'Escala de puntuación por ronda (máx. 10 × 5 rondas = 50 pts)' : 'Per-round score scale (max 10 × 5 rounds = 50 pts)'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { pts: '10 / 10', label: es ? 'Excelente' : 'Excellent',  color: 'text-success', bg: 'bg-success/10 border-success/20' },
+                { pts: '5 / 10',  label: es ? 'Adecuado'  : 'Adequate',   color: 'text-accent',  bg: 'bg-accent/10  border-accent/20'  },
+                { pts: '2 / 10',  label: es ? 'Débil'     : 'Weak',       color: 'text-warning', bg: 'bg-warning/10 border-warning/20' },
+                { pts: '0 / 10',  label: es ? 'Incorrecto': 'Incorrect',  color: 'text-danger',  bg: 'bg-danger/10  border-danger/20'  },
+                { pts: '— / 10',  label: es ? 'Sin puntuación individual' : 'No per-round score', color: 'text-slate-400', bg: 'bg-surface border-line/30' },
+              ].map(({ pts, label, color, bg }) => (
+                <div key={pts} className={cn('flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs', bg)}>
+                  <span className={cn('font-bold tabular-nums', color)}>{pts}</span>
+                  <span className="text-slate-400">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Session type note */}
+          <p className="text-[11px] text-slate-500 border-t border-line/30 pt-3">
+            {es
+              ? '19 sesiones tienen puntuación detallada por ronda. 146 sesiones tienen puntuación global únicamente (se muestra "— / 10" por ronda con el total encima de las interacciones).'
+              : '19 sessions have detailed per-round scoring. 146 sessions have an overall score only ("— / 10" shown per round with total displayed above interactions).'}
+          </p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
