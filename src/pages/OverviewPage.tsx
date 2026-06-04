@@ -79,13 +79,15 @@ export default function OverviewPage() {
     sims, activities, members, admins,
     refetch,
   } = useDashboardData()
-  // Bridge: full data source — ALL 767 sessions across ALL 11 activities
-  // Supplements simulator (436 coaching sessions) with Visita Médica APECS data
-  const bridgeOv = useBridgeOverview()
-
   // ── Date range ──────────────────────────────
   const [from, setFrom] = useState('')
   const [to,   setTo]   = useState('')
+
+  // Bridge: full data source — ALL 767 sessions across ALL 11 activities
+  // Supplements simulator (436 coaching sessions) with Visita Médica APECS data
+  const bridgeOv = useBridgeOverview(
+    from || to ? { date_from: from || undefined, date_to: to || undefined } : undefined
+  )
 
   // ── User selection filter ────────────────────
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set())
@@ -129,7 +131,7 @@ export default function OverviewPage() {
     let result = sims
     if (from || to) {
       result = result.filter((s) => {
-        const date = s.Fecha_y_Hora?.split('T')[0]
+        const date = s.Fecha_y_Hora?.split(/[T ]/)[0]
         return date ? inDateRange(date, from, to) : false
       })
     }
