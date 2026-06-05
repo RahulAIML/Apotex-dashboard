@@ -30,7 +30,13 @@ export function useDashboardData() {
 
   const activities = activitiesQ.data?.data ?? []
   const sims = filterTestUsers(simsQ.data ?? [])
-  const members = membersQ.data?.data ?? []
+
+  // Filter out internal Rolplay accounts (udev/udemo/ucontenido @rolplay.net)
+  // so member count = 57 (real Apotex users) not 61 (includes dev accounts)
+  const INTERNAL_DOMAINS = ['rolplay.net', 'apotex-rolplay.net', 'rolplay.com']
+  const members = (membersQ.data?.data ?? []).filter(
+    m => !INTERNAL_DOMAINS.some(d => (m.mb_email ?? '').toLowerCase().includes(d))
+  )
   const admins = adminsQ.data?.data ?? []
 
   const kpis = isLoading || isError ? null : computeKPIs(sims, activities, members, admins)

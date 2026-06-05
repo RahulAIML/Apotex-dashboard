@@ -27,13 +27,10 @@ export default function OrganizationPage() {
 
   const [memberSearch, setMemberSearch] = useState('')
 
-  // Filter out internal Rolplay accounts from org tree and counts
+  // Internal accounts already filtered upstream in useDashboardData
   const clientAdmins = admins.filter(a => !isInternalAdmin(a.rpa_email ?? ''))
-
-  const clientMembers = useMemo(
-    () => members.filter(m => !isInternalAdmin(m.mb_email ?? '')),
-    [members],
-  )
+  // members is already filtered — alias for clarity
+  const clientMembers = members
 
   const filteredMembers = useMemo(() => {
     const q = memberSearch.toLowerCase().trim()
