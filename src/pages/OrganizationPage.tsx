@@ -74,7 +74,7 @@ export default function OrganizationPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard icon={Shield} label={t('kpi_total_admins')} value={clientAdmins.filter((a) => a.rpa_profile_type === 'admin').length} color="accent" />
         <StatCard icon={UserCheck} label={t('kpi_total_supervisors')} value={clientAdmins.filter((a) => a.rpa_profile_type === 'supervisor').length} color="violet" />
-        <StatCard icon={Users} label={t('kpi_total_members')} value={members.length} color="success" />
+        <StatCard icon={Users} label={t('kpi_total_members')} value={clientMembers.length} color="success" />
       </div>
 
       {/* Tree */}
