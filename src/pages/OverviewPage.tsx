@@ -8,7 +8,7 @@ import { useTranslation } from '../lib/i18n'
 import { DateRangeFilter, inDateRange, simDate } from '../components/ui/DateRangeFilter'
 import { downloadCSV, csvDate } from '../lib/csvExport'
 import {
-  BarChart3, PlayCircle, CheckCircle2, Users, Mic2, Download,
+  BarChart3, PlayCircle, CheckCircle2, Users, Mic2, Download, Brain,
   Search, ChevronDown, X,
 } from 'lucide-react'
 import {
@@ -443,11 +443,13 @@ export default function OverviewPage() {
       </div>
 
       {/* ── Primary KPI cards — single source of truth ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <KpiCard icon={PlayCircle}   label={t('kpi_total_sims')}      value={activeKpis!.totalSimulations}   sub={t('sub_across_activities')} color="accent" />
         <KpiCard icon={BarChart3}    label={t('kpi_avg_score')}       value={`${activeKpis!.averageScore}%`} sub={t('sub_overall')}           color="violet" />
         <KpiCard icon={CheckCircle2} label={t('kpi_pass_rate')}       value={`${activeKpis!.passRate}%`}     sub={t('sub_sessions_passed')}   color="pass" />
         <KpiCard icon={Users}        label={t('kpi_active_advisors')} value={activeKpis!.activeAdvisors}     sub={t('sub_with_simulations')}  color="indigo" />
+        <KpiCard icon={Brain}        label={es ? 'Actividades' : 'Activities'} value={activeKpis!.totalActivities} sub={es ? '11 ejercicios' : '11 exercises'} color="violet" />
+        <KpiCard icon={Users}        label={es ? 'Miembros' : 'Members'}       value={activeKpis!.totalMembers}    sub={es ? 'en plataforma' : 'on platform'}  color="indigo" />
       </div>
 
       {/* Charts */}
