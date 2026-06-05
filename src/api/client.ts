@@ -68,14 +68,14 @@ export async function fetchSimulations(): Promise<Simulation[]> {
   const sims1: Simulation[] = Array.isArray(raw1) ? raw1 : (raw1.data ?? [])
 
   // Set 3: roleplay_demorp6 via PHP bridge sim.demorp6 action
+  // Uses ?ids= (comma-separated) — PHP-safe alternative to duplicate ?id= keys
   let sims2: Simulation[] = []
   try {
     const raw2 = await fetchJSON<{ ok: boolean; data: Simulation[]; total_records: number }>(
-      `/bridge?action=sim.demorp6&${IDS_DEMORP6}`
+      `/bridge?action=sim.demorp6&ids=470,471,475,476,485`
     )
     if (raw2.ok && Array.isArray(raw2.data)) sims2 = raw2.data
   } catch (e) {
-    // Graceful degradation — Set 3 unavailable until DB2 credentials are set in .env
     console.warn('[client] roleplay_demorp6 fetch failed — Set 3 exercises unavailable:', e)
   }
 
