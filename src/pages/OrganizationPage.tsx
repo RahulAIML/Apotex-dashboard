@@ -1,7 +1,9 @@
+import { useState, useMemo } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
-import { Building2, Users, Mail, Shield, UserCheck } from 'lucide-react'
+import { Building2, Users, Mail, Shield, UserCheck, Search } from 'lucide-react'
+import { cn } from '../lib/cn'
 import type { OrgNode } from '../lib/analytics'
 
 /** Decode HTML entities returned by the API (e.g. &aacute; → á) */
@@ -20,10 +22,28 @@ function isInternalAdmin(email: string): boolean {
 export default function OrganizationPage() {
   const { language } = useAppStore()
   const t = useTranslation(language)
+  const es = language === 'es'
   const { isLoading, isError, orgTree, members, admins, refetch } = useDashboardData()
+
+  const [memberSearch, setMemberSearch] = useState('')
 
   // Filter out internal Rolplay accounts from org tree and counts
   const clientAdmins = admins.filter(a => !isInternalAdmin(a.rpa_email ?? ''))
+
+  const clientMembers = useMemo(
+    () => members.filter(m => !isInternalAdmin(m.mb_email ?? '')),
+    [members],
+  )
+
+  const filteredMembers = useMemo(() => {
+    const q = memberSearch.toLowerCase().trim()
+    if (!q) return clientMembers
+    return clientMembers.filter(m =>
+      (m.mb_fullname ?? '').toLowerCase().includes(q) ||
+      (m.mb_email    ?? '').toLowerCase().includes(q) ||
+      (m.mb_designation ?? '').toLowerCase().includes(q)
+    )
+  }, [clientMembers, memberSearch])
 
   if (isLoading) {
     return (
@@ -69,31 +89,93 @@ export default function OrganizationPage() {
         </div>
       </div>
 
-      {/* Members table */}
+      {/* Members table — all members, searchable */}
       <div className="card overflow-hidden">
-        <h3 className="text-sm font-semibold text-slate-200 px-4 pt-4 mb-2">{t('kpi_total_members')}</h3>
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between gap-3 flex-wrap border-b border-line/30">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-200">{t('kpi_total_members')}</h3>
+            <span className="text-[11px] text-slate-500 bg-surface border border-line/40 px-2 py-0.5 rounded-full">
+              {filteredMembers.length}
+              {memberSearch && ` / ${clientMembers.length}`}
+            </span>
+          </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
+            <input
+              value={memberSearch}
+              onChange={e => setMemberSearch(e.target.value)}
+              placeholder={es ? 'Buscar miembro...' : 'Search member...'}
+              className="input pl-8 py-1.5 text-xs w-52"
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-line/40">
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t('col_advisor')}</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t('col_email')}</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t('col_type')}</th>
-                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{t('col_members')}</th>
+                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  {t('col_advisor')}
+                </th>
+                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  {t('col_email')}
+                </th>
+                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  {t('col_type')}
+                </th>
+                <th className="px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  {es ? 'Administrador' : 'Administrator'}
+                </th>
               </tr>
             </thead>
             <tbody>
-              {members.filter(m => !isInternalAdmin(m.mb_email ?? '')).slice(0, 50).map((m) => {
-                const admin = clientAdmins.find((a) => a.rpa_id === m.mb_admin)
-                return (
-                  <tr key={m.mb_id} className="border-b border-line/20 hover:bg-white/[0.02] transition-colors">
-                    <td className="px-4 py-3 text-slate-200 font-medium">{decodeHtml(m.mb_fullname ?? '')}</td>
-                    <td className="px-4 py-3 max-w-[160px]"><span className="text-slate-400 text-xs block truncate">{m.mb_email}</span></td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{m.mb_designation || t('member')}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{admin ? decodeHtml(admin.rpa_full_name ?? '') : '-'}</td>
-                  </tr>
-                )
-              })}
+              {filteredMembers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-sm">
+                    {es ? 'No se encontraron miembros' : 'No members found'}
+                  </td>
+                </tr>
+              ) : (
+                filteredMembers.map((m, i) => {
+                  const admin = clientAdmins.find((a) => a.rpa_id === m.mb_admin)
+                  return (
+                    <tr
+                      key={m.mb_id}
+                      className={cn(
+                        'border-b border-line/20 hover:bg-white/[0.02] transition-colors',
+                        i % 2 === 0 ? '' : 'bg-white/[0.01]',
+                      )}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          {/* Avatar initial */}
+                          <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                            <span className="text-[11px] font-semibold text-accent">
+                              {decodeHtml(m.mb_fullname ?? '').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-slate-200 font-medium text-sm">
+                            {decodeHtml(m.mb_fullname ?? '')}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px]">
+                        <span className="text-slate-400 text-xs block truncate">{m.mb_email || '—'}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-slate-400 text-xs">
+                          {m.mb_designation || (es ? 'Asesor' : 'Advisor')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-slate-400 text-xs">
+                          {admin ? decodeHtml(admin.rpa_full_name ?? '') : '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
             </tbody>
           </table>
         </div>
