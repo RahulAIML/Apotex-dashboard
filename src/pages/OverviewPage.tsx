@@ -6,7 +6,7 @@ import {
 } from '../lib/analytics'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
-import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
+import { DateRangeFilter, inDateRange, simDate } from '../components/ui/DateRangeFilter'
 import { downloadCSV, csvDate } from '../lib/csvExport'
 import {
   BarChart3, PlayCircle, CheckCircle2, Users, Brain, Mic2, Download,
@@ -128,10 +128,7 @@ export default function OverviewPage() {
   const filteredSims = useMemo(() => {
     let result = sims
     if (from || to) {
-      result = result.filter((s) => {
-        const date = s.Fecha_y_Hora?.split('T')[0]
-        return date ? inDateRange(date, from, to) : false
-      })
+      result = result.filter((s) => inDateRange(s.Fecha_y_Hora, from, to))
     }
     if (selectedUsers.size > 0) {
       result = result.filter((s) => selectedUsers.has(s.Usuario_Nombre))
@@ -286,7 +283,6 @@ export default function OverviewPage() {
         ? (s.Calificacion >= 70 ? (es ? 'Aprobado' : 'Pass') : (es ? 'Reprobado' : 'Fail'))
         : (es ? 'Sin calificación' : 'Unscored')
       const clean  = (v: string | null | undefined) => (v ?? '').replace(/[\n\r]+/g, ' ').trim()
-      const dt     = (s.Fecha_y_Hora ?? '').split('T')
       rows.push([
         s.ID_Sim,
         s.Usuario_Nombre ?? '',
@@ -297,8 +293,8 @@ export default function OverviewPage() {
         m?.mb_line       ?? '',
         act?.Caso_de_Uso       ?? `ID ${s.ID_Caso_de_Uso}`,
         act?.Actividad_Nombre  ?? '',
-        dt[0] ?? '',
-        dt[1]?.slice(0, 5) ?? '',
+        simDate(s.Fecha_y_Hora),
+        (s.Fecha_y_Hora ?? '').substring(11, 16),
         s.Calificacion   ?? 0,
         status,
         s.Diagnostico_Final ?? '',
@@ -467,7 +463,7 @@ export default function OverviewPage() {
             <KpiCard icon={BarChart3}    label={es ? 'Promedio Global' : 'Global Avg'}        value={`${bridgeOv.data.avg_score}%`}  sub={es ? 'todas actividades' : 'all activities'} color="accent" />
             <KpiCard icon={CheckCircle2} label={es ? 'Tasa Aprobación' : 'Pass Rate'}         value={`${bridgeOv.data.pass_rate_pct}%`} sub={es ? 'umbral ≥70%' : 'threshold ≥70%'} color="pass" />
             <KpiCard icon={Users}        label={es ? 'Miembros' : 'Members'}                  value={bridgeOv.data.total_members}   sub={es ? 'plataforma' : 'platform'} color="indigo" />
-            <KpiCard icon={Brain}        label={es ? 'Actividades Activas' : 'Active Activities'} value={bridgeOv.data.active_activities} sub={es ? 'todas actividades' : 'all activities'} color="violet" />
+            <KpiCard icon={Brain}        label={es ? 'Actividades Activas' : 'Active Activities'} value={activeKpis?.totalActivities ?? 11} sub={es ? '11 ejercicios' : '11 exercises'} color="violet" />
           </div>
         </div>
       )}

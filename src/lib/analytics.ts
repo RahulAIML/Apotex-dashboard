@@ -1,4 +1,5 @@
 import type { Activity, Administrator, Member, Simulation } from '../api/types'
+import { simDate } from '../components/ui/DateRangeFilter'
 // re-export so pages can import directly
 export type { Simulation }
 
@@ -207,7 +208,7 @@ export interface TrendPoint {
 export function computeTrend(sims: Simulation[]): TrendPoint[] {
   const byDate: Record<string, Simulation[]> = {}
   sims.forEach((s) => {
-    const date = s.Fecha_y_Hora?.split('T')[0]
+    const date = simDate(s.Fecha_y_Hora)
     if (!date) return
     if (!byDate[date]) byDate[date] = []
     byDate[date].push(s)

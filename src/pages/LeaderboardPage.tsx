@@ -19,10 +19,7 @@ export default function LeaderboardPage() {
 
   const filteredSims = useMemo(() => {
     if (!from && !to) return sims
-    return sims.filter((s) => {
-      const date = s.Fecha_y_Hora?.split('T')[0]
-      return date ? inDateRange(date, from, to) : false
-    })
+    return sims.filter((s) => inDateRange(s.Fecha_y_Hora, from, to))
   }, [sims, from, to])
 
   const userStats = useMemo(() => computeUserStats(filteredSims), [filteredSims])

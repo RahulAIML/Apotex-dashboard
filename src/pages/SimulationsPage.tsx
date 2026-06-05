@@ -2,7 +2,7 @@ import { useState, useMemo, Fragment } from 'react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
-import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
+import { DateRangeFilter, inDateRange, simDate } from '../components/ui/DateRangeFilter'
 import { Search, CheckCircle2, XCircle, ChevronDown, ChevronUp, Info, X } from 'lucide-react'
 import { cn } from '../lib/cn'
 
@@ -23,8 +23,7 @@ export default function SimulationsPage() {
     return sims.filter((s) => {
       // Date range filter
       if (from || to) {
-        const date = s.Fecha_y_Hora?.split('T')[0]
-        if (!date || !inDateRange(date, from, to)) return false
+        if (!inDateRange(s.Fecha_y_Hora, from, to)) return false
       }
       // Text search
       const q = search.toLowerCase().trim()
@@ -176,7 +175,7 @@ export default function SimulationsPage() {
                     >
                       <td className="px-4 py-3 text-slate-200 font-medium">{s.Usuario_Nombre}</td>
                       <td className="px-4 py-3 text-slate-400">{activity?.Caso_de_Uso ?? `ID ${s.ID_Caso_de_Uso}`}</td>
-                      <td className="px-4 py-3 text-slate-400 text-xs">{(s.Fecha_y_Hora ?? '').slice(0, 10)}</td>
+                      <td className="px-4 py-3 text-slate-400 text-xs">{simDate(s.Fecha_y_Hora)}</td>
                       <td className="px-4 py-3">
                         {hasScore ? (
                           <span className={cn('font-semibold', s.Calificacion >= 70 ? 'text-success' : 'text-danger')}>
