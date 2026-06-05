@@ -478,7 +478,7 @@ export default function OverviewPage() {
           <PlayCircle className="w-3 h-3" />
           {es ? 'Simulador de Coaching (Q&A detallado)' : 'Coaching Simulator (detailed Q&A)'}
           <span className="ml-2 text-[10px] font-normal normal-case text-slate-500">
-            {es ? 'DM + Coach Evaluador + Coach Maestro' : 'DM + Coach Evaluador + Coach Maestro'}
+            {es ? '11 ejercicios · 3 sets · 2 bases de datos' : '11 exercises · 3 sets · 2 databases'}
           </span>
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

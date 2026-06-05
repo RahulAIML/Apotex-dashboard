@@ -18,7 +18,12 @@ export default defineConfig({
         target: 'https://serv.aux-rolplay.com',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => `/apotex/bridge/index.php${path.replace(/^\/bridge/, '')}`,
+        // Rewrite /bridge?action=X  →  /apotex/bridge/?action=X
+        // (no index.php — nginx location /apotex/bridge/ proxies to container/index.php)
+        rewrite: (path) => {
+          const rest = path.slice('/bridge'.length).replace(/^\//, '')
+          return `/apotex/bridge/${rest}`
+        },
       },
     },
   },
@@ -37,7 +42,12 @@ export default defineConfig({
         target: 'https://serv.aux-rolplay.com',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => `/apotex/bridge/index.php${path.replace(/^\/bridge/, '')}`,
+        // Rewrite /bridge?action=X  →  /apotex/bridge/?action=X
+        // (no index.php — nginx location /apotex/bridge/ proxies to container/index.php)
+        rewrite: (path) => {
+          const rest = path.slice('/bridge'.length).replace(/^\//, '')
+          return `/apotex/bridge/${rest}`
+        },
       },
     },
   },

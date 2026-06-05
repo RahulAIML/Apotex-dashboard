@@ -6,7 +6,7 @@
     },
     {
       "source": "/bridge/:path*",
-      "destination": "https://serv.aux-rolplay.com/apotex/bridge/index.php"
+      "destination": "https://serv.aux-rolplay.com/apotex/bridge/:path*"
     }
   ]
 }
