@@ -79,20 +79,29 @@ function pct(part: number, total: number): number {
 }
 
 /**
- * APOTEX SCORING MODEL
- * ─────────────────────────────────────────────────────────────
- * The `Calificacion` field (0–100) IS the score for all sessions.
+ * APOTEX SCORING MODEL — 11 exercises across 3 sets / 2 databases
+ * ─────────────────────────────────────────────────────────────────────
+ * SET 1 — simulador_Asistentes (IDs 71, 174, 175, 176)
+ *   71  — Modelo APECS (DM Apotex)         — Calificacion = Puntos_Totales/50 × 100
+ *   174 — Periamid Coach Maestro           — Calificacion = 0 in simulator*
+ *   175 — Enfermedad de Parkinson Maestro  — Calificacion = 0 in simulator*
+ *   176 — Neristren Coach Maestro          — Calificacion = 0 in simulator*
  *
- * Activity types and their scoring:
- *   Coach Evaluador (71,111,128): Calificacion = Puntos_Totales/50 × 100
- *   Coach Maestro   (174,175,176): Calificacion = 0 in simulator
- *                                  (actual score lives in bridge/simulador_ventas_callback)
+ * SET 2 — simulador_Asistentes (IDs 111, 128)
+ *   111 — Evaluación de Productos 1        — Calificacion = Puntos_Totales/50 × 100
+ *   128 — Evaluación de Productos 2        — Calificacion = Puntos_Totales/50 × 100
  *
- * Pass threshold = 70% (based on bridge data and Apotex standards).
+ * SET 3 — roleplay_demorp6 (IDs 470, 471, 475, 476, 485)
+ *   470 — Arabrixen     471 — Apodrolen D  475 — Cluminol
+ *   476 — Divertex      485 — Periamid
+ *   All use Calificacion from saex_score (same formula as Sets 1+2)
  *
- * DO NOT use the Gentera formula (Puntos_Totales / applicable_interactions × 100)
- * — for Apotex, Coach Maestro sessions have Puntos_Totales=0 and no Puntos_1..6,
- * which causes totalEvts≈107 vs totalPts=5098 → result=4764% (the bug seen in prod).
+ * * Coach Maestro (174/175/176): real scores live in the bridge table
+ *   simulador_ventas_callback — the simulator returns saex_score=0 for them.
+ *   These sessions are counted in totalSimulations but excluded from
+ *   averageScore / passRate (scoredSims() filters Calificacion=0).
+ *
+ * Pass threshold = 70%.
  */
 export const APOTEX_PASS_THRESHOLD = 70
 
