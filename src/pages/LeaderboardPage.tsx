@@ -5,6 +5,7 @@ import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { Trophy, Medal, TrendingUp, TrendingDown, Search, X } from 'lucide-react'
+import { LoadingState } from '../components/ui/LoadingState'
 
 export default function LeaderboardPage() {
   const { language } = useAppStore()
@@ -36,14 +37,7 @@ export default function LeaderboardPage() {
 
   const es = language === 'es'
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 skeleton rounded-lg" />
-        <div className="card p-5 h-96 skeleton rounded-xl" />
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError) {
     return (

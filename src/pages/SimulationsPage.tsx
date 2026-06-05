@@ -5,6 +5,7 @@ import { useTranslation } from '../lib/i18n'
 import { DateRangeFilter, inDateRange, simDate } from '../components/ui/DateRangeFilter'
 import { Search, CheckCircle2, XCircle, ChevronDown, ChevronUp, Info, X } from 'lucide-react'
 import { cn } from '../lib/cn'
+import { LoadingState } from '../components/ui/LoadingState'
 
 export default function SimulationsPage() {
   const { language } = useAppStore()
@@ -36,14 +37,7 @@ export default function SimulationsPage() {
     })
   }, [sims, from, to, search, actMap])
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-40 skeleton rounded-lg" />
-        <div className="card p-5 h-96 skeleton rounded-xl" />
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError) {
     return (

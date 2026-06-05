@@ -5,6 +5,7 @@ import { DateRangeFilter, inDateRange } from '../components/ui/DateRangeFilter'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { TrendingUp, AlertTriangle, Lightbulb } from 'lucide-react'
+import { LoadingState } from '../components/ui/LoadingState'
 
 export default function CoachingPage() {
   const { language } = useAppStore()
@@ -23,17 +24,7 @@ export default function CoachingPage() {
   const actStats   = useMemo(() => computeActivityStats(filteredSims, activities),[filteredSims, activities])
   const roundStats = useMemo(() => computeRoundStats(filteredSims),               [filteredSims])
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 skeleton rounded-lg" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="card p-5 h-64 skeleton rounded-xl" />
-          <div className="card p-5 h-64 skeleton rounded-xl" />
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError || !kpis) {
     return (

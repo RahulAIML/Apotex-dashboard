@@ -8,6 +8,7 @@ import { Activity, CheckCircle2, XCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { useChartColors } from '../lib/chartTheme'
 import { TooltipShell, TRow, TTitle, useTooltipColors, type TooltipColors } from '../components/charts/TooltipShell'
+import { LoadingState } from '../components/ui/LoadingState'
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444']
 
@@ -41,14 +42,7 @@ export default function ActivitiesPage() {
 
   const actStats = useMemo(() => computeActivityStats(filteredSims, activities), [filteredSims, activities])
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-40 skeleton rounded-lg" />
-        <div className="card p-5 h-80 skeleton rounded-xl" />
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError) {
     return (

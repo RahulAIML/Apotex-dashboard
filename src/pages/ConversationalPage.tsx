@@ -12,6 +12,7 @@ import { MessageSquare, BarChart2, TrendingUp, TrendingDown, Minus, AlertTriangl
 import { useChartColors } from '../lib/chartTheme'
 import { TooltipShell, TRow, TTitle, useTooltipColors, type TooltipColors } from '../components/charts/TooltipShell'
 import type { ActivityStat } from '../lib/analytics'
+import { LoadingState } from '../components/ui/LoadingState'
 
 // ─── Tooltip ────────────────────────────────────────────────────────────────
 function RoundTooltip({
@@ -199,22 +200,7 @@ export default function ConversationalPage() {
   const roundStats = useMemo(() => computeRoundStats(filteredSims),                [filteredSims])
   const actStats   = useMemo(() => computeActivityStats(filteredSims, activities), [filteredSims, activities])
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 skeleton rounded-lg" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="card p-5 h-80 skeleton rounded-xl" />
-          <div className="card p-5 h-80 skeleton rounded-xl" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card p-4 h-52 skeleton rounded-xl" />
-          ))}
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError) {
     return (

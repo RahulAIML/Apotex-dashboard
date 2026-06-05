@@ -18,6 +18,7 @@ import {
 import { Link } from 'react-router-dom'
 import { useChartColors } from '../lib/chartTheme'
 import { TooltipShell, TRow, TTitle, useTooltipColors, type TooltipColors } from '../components/charts/TooltipShell'
+import { LoadingState } from '../components/ui/LoadingState'
 
 const COLORS = { pass: '#10B981', fail: '#EF4444', accent: '#3B82F6', violet: '#8B5CF6' }
 
@@ -321,22 +322,7 @@ export default function OverviewPage() {
   // exportRpCSV removed — RolPlay not active for Apotex
 
   // ── Loading / error ──────────────────────────
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 skeleton rounded-lg" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card p-5 h-28 skeleton rounded-xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="card p-5 h-80 skeleton rounded-xl lg:col-span-2" />
-          <div className="card p-5 h-80 skeleton rounded-xl" />
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError || !activeKpis) {
     return (

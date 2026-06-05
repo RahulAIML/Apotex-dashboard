@@ -5,6 +5,7 @@ import { useTranslation } from '../lib/i18n'
 import { Building2, Users, Mail, Shield, UserCheck, Search } from 'lucide-react'
 import { cn } from '../lib/cn'
 import type { OrgNode } from '../lib/analytics'
+import { LoadingState } from '../components/ui/LoadingState'
 
 /** Decode HTML entities returned by the API (e.g. &aacute; → á) */
 function decodeHtml(str: string): string {
@@ -42,14 +43,7 @@ export default function OrganizationPage() {
     )
   }, [clientMembers, memberSearch])
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-8 w-48 skeleton rounded-lg" />
-        <div className="card p-5 h-96 skeleton rounded-xl" />
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingState />
 
   if (isError) {
     return (
