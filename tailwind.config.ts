@@ -12,7 +12,7 @@ export default {
         'card-hover': 'rgb(var(--color-card-hover) / <alpha-value>)',
         line: 'rgb(var(--color-line) / <alpha-value>)',
         'line-subtle': 'rgb(var(--color-line-subtle) / <alpha-value>)',
-        accent: '#3B82F6',
+        accent: '#DC2626',
         success: '#10B981',
         warning: '#F59E0B',
         danger: '#EF4444',

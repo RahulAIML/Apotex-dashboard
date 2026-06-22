@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, PlayCircle, MessageSquare, Brain, Trophy,
   Activity, Building2, ChevronLeft, ChevronRight,
-  Mic2, UserCheck, GitBranch, FileText, Settings, X,
+  GitBranch, FileText, Settings, X,
 } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAppStore } from '../../store'
@@ -24,37 +24,30 @@ const NAV_GROUPS: { labelKey: string; items: NavItem[] }[] = [
   {
     labelKey: 'nav_simulator',
     items: [
-      { to: '/simulations', icon: PlayCircle, key: 'nav_simulations' },
+      { to: '/simulations',   icon: PlayCircle,    key: 'nav_simulations' },
       { to: '/conversational', icon: MessageSquare, key: 'nav_conversational' },
-      { to: '/coaching', icon: Brain, key: 'nav_coaching' },
-      { to: '/leaderboard', icon: Trophy, key: 'nav_leaderboard' },
+      { to: '/coaching',      icon: Brain,          key: 'nav_coaching' },
+      { to: '/leaderboard',   icon: Trophy,         key: 'nav_leaderboard' },
     ],
   },
-  // RolPlay (video coaching + Robin AI) not deployed for Apotex — section removed
   {
     labelKey: 'nav_platform',
     items: [
-      { to: '/activities', icon: Activity, key: 'nav_activities' },
-      { to: '/organization', icon: Building2, key: 'nav_organization' },
-      { to: '/business-lines', icon: GitBranch, key: 'nav_business_lines' },
+      { to: '/activities',     icon: Activity,   key: 'nav_activities' },
+      { to: '/organization',   icon: Building2,  key: 'nav_organization' },
+      { to: '/business-lines', icon: GitBranch,  key: 'nav_business_lines' },
     ],
   },
   {
     labelKey: 'nav_more',
     items: [
-      { to: '/reports', icon: FileText, key: 'nav_reports' },
+      { to: '/reports',  icon: FileText, key: 'nav_reports' },
       { to: '/settings', icon: Settings, key: 'nav_settings' },
     ],
   },
 ]
 
-function NavContent({
-  collapsed,
-  onNavClick,
-}: {
-  collapsed: boolean
-  onNavClick?: () => void
-}) {
+function NavContent({ collapsed, onNavClick }: { collapsed: boolean; onNavClick?: () => void }) {
   const { language } = useAppStore()
   const t = useTranslation(language)
 
@@ -68,7 +61,8 @@ function NavContent({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-700"
+                className="px-2 mb-1.5 text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: '#6b8aad' }}
               >
                 {t(group.labelKey)}
               </motion.p>
@@ -83,29 +77,17 @@ function NavContent({
                 onClick={onNavClick}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-2 py-2 rounded-lg text-sm transition-all duration-150 group relative',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 relative',
                     isActive
-                      ? 'bg-accent/10 text-accent'
-                      : 'text-slate-500 hover:text-slate-200 hover:bg-white/[0.03]',
+                      ? 'bg-accent text-white'
+                      : 'text-[#94b0c8] hover:text-white hover:bg-white/[0.06]',
                   )
                 }
                 title={collapsed ? t(item.key) : undefined}
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-nav"
-                        className="absolute inset-0 rounded-lg bg-accent/10"
-                        transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                      />
-                    )}
-                    <item.icon
-                      className={cn(
-                        'w-4 h-4 shrink-0 relative z-10 transition-colors',
-                        isActive ? 'text-accent' : 'text-slate-600 group-hover:text-slate-300',
-                      )}
-                    />
+                    <item.icon className={cn('w-4 h-4 shrink-0 relative z-10', isActive ? 'text-white' : '')} />
                     <AnimatePresence>
                       {!collapsed && (
                         <motion.span
@@ -113,7 +95,7 @@ function NavContent({
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.12 }}
-                          className="relative z-10 whitespace-nowrap font-medium"
+                          className="relative z-10 whitespace-nowrap"
                         >
                           {t(item.key)}
                         </motion.span>
@@ -134,18 +116,21 @@ export function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, mobileMenuOpen, setMobileMenuOpen, language } = useAppStore()
   const t = useTranslation(language)
 
+  const sidebarStyle = { backgroundColor: '#0f1f35', borderColor: '#1a2f4a' }
+
   return (
     <>
       {/* ── Desktop sidebar (lg+) ── */}
       <motion.aside
         animate={{ width: sidebarCollapsed ? 72 : 240 }}
         transition={{ type: 'spring', stiffness: 300, damping: 35 }}
-        className="relative hidden lg:flex flex-col bg-surface border-r border-line/40 h-screen shrink-0 overflow-hidden z-20"
+        className="relative hidden lg:flex flex-col h-screen shrink-0 overflow-hidden z-20 border-r"
+        style={sidebarStyle}
       >
         {/* Logo */}
-        <div className="flex items-center h-16 px-4 border-b border-line/30 shrink-0">
+        <div className="flex items-center h-16 px-4 shrink-0 border-b" style={{ borderColor: '#1a2f4a' }}>
           <div className="flex items-center gap-3 min-w-0">
-            <img src="/apotex-logo.svg" alt="Apotex" className="w-10 h-10 shrink-0" />
+            <img src="/apotex-logo.svg" alt="Apotex" className="w-9 h-9 shrink-0" />
             <AnimatePresence>
               {!sidebarCollapsed && (
                 <motion.div
@@ -155,10 +140,10 @@ export function Sidebar() {
                   transition={{ duration: 0.15 }}
                   className="flex flex-col min-w-0"
                 >
-                  <span className="text-slate-100 font-semibold text-sm leading-tight tracking-tight whitespace-nowrap">
+                  <span className="text-white font-bold text-sm leading-tight tracking-tight whitespace-nowrap">
                     Apotex
                   </span>
-                  <span className="text-slate-600 text-[10px] leading-tight whitespace-nowrap">
+                  <span className="text-[10px] leading-tight whitespace-nowrap" style={{ color: '#6b8aad' }}>
                     {t('sidebar_tagline')}
                   </span>
                 </motion.div>
@@ -172,7 +157,8 @@ export function Sidebar() {
         {/* Collapse toggle */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-surface border border-line flex items-center justify-center text-slate-500 hover:text-slate-200 hover:border-line/80 transition-all z-30 shadow-elevated"
+          className="absolute -right-3 top-[72px] w-6 h-6 rounded-full flex items-center justify-center transition-all z-30 shadow-md"
+          style={{ backgroundColor: '#0f1f35', border: '1px solid #1a2f4a', color: '#6b8aad' }}
           title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
@@ -188,25 +174,25 @@ export function Sidebar() {
             animate={{ x: 0 }}
             exit={{ x: -260 }}
             transition={{ type: 'spring', stiffness: 320, damping: 35 }}
-            className="fixed inset-y-0 left-0 z-50 w-[240px] flex flex-col bg-surface border-r border-line/40 lg:hidden"
+            className="fixed inset-y-0 left-0 z-50 w-[240px] flex flex-col lg:hidden border-r"
+            style={sidebarStyle}
           >
-            {/* Logo + close */}
-            <div className="flex items-center justify-between h-16 px-4 border-b border-line/30 shrink-0">
+            <div className="flex items-center justify-between h-16 px-4 shrink-0 border-b" style={{ borderColor: '#1a2f4a' }}>
               <div className="flex items-center gap-3">
                 <img src="/apotex-logo.svg" alt="Apotex" className="w-9 h-9 shrink-0" />
                 <div className="flex flex-col">
-                  <span className="text-slate-100 font-semibold text-sm leading-tight">Apotex</span>
-                  <span className="text-slate-600 text-[10px] leading-tight">{t('sidebar_tagline')}</span>
+                  <span className="text-white font-bold text-sm leading-tight">Apotex</span>
+                  <span className="text-[10px] leading-tight" style={{ color: '#6b8aad' }}>{t('sidebar_tagline')}</span>
                 </div>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-colors"
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: '#6b8aad' }}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-
             <NavContent collapsed={false} onNavClick={() => setMobileMenuOpen(false)} />
           </motion.aside>
         )}
