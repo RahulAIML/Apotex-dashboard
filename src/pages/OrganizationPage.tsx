@@ -24,7 +24,7 @@ export default function OrganizationPage() {
   const { language } = useAppStore()
   const t = useTranslation(language)
   const es = language === 'es'
-  const { isLoading, isError, orgTree, members, admins, refetch } = useDashboardData()
+  const { isLoading, isError, orgTree, members, admins, sims, refetch } = useDashboardData()
 
   const [memberSearch, setMemberSearch] = useState('')
 
@@ -33,15 +33,28 @@ export default function OrganizationPage() {
   // members is already filtered — alias for clarity
   const clientMembers = members
 
+  // mb_email is blank for most members in DB — cross-reference from sims (s.Usuario = actual email)
+  const simEmailByName = useMemo(() => {
+    const map = new Map<string, string>()
+    sims.forEach(s => {
+      if (s.Usuario && s.Usuario_Nombre) {
+        const key = s.Usuario_Nombre.toLowerCase().trim()
+        if (!map.has(key)) map.set(key, s.Usuario)
+      }
+    })
+    return map
+  }, [sims])
+
   const filteredMembers = useMemo(() => {
     const q = memberSearch.toLowerCase().trim()
     if (!q) return clientMembers
-    return clientMembers.filter(m =>
-      (m.mb_fullname ?? '').toLowerCase().includes(q) ||
-      (m.mb_email    ?? '').toLowerCase().includes(q) ||
-      (m.mb_designation ?? '').toLowerCase().includes(q)
-    )
-  }, [clientMembers, memberSearch])
+    return clientMembers.filter(m => {
+      const name   = (m.mb_fullname ?? '').toLowerCase()
+      const email  = (m.mb_email ?? simEmailByName.get(decodeHtml(m.mb_fullname ?? '').toLowerCase().trim()) ?? '').toLowerCase()
+      const desig  = (m.mb_designation ?? '').toLowerCase()
+      return name.includes(q) || email.includes(q) || desig.includes(q)
+    })
+  }, [clientMembers, memberSearch, simEmailByName])
 
   if (isLoading) return <LoadingState />
 
@@ -133,13 +146,12 @@ export default function OrganizationPage() {
                     <tr
                       key={m.mb_id}
                       className={cn(
-                        'border-b border-line/20 hover:bg-white/[0.02] transition-colors',
+                        'border-b border-line/20 hover:bg-white/[0.025] transition-colors group',
                         i % 2 === 0 ? '' : 'bg-white/[0.01]',
                       )}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2.5">
-                          {/* Avatar initial */}
                           <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                             <span className="text-[11px] font-semibold text-accent">
                               {decodeHtml(m.mb_fullname ?? '').charAt(0).toUpperCase()}
@@ -150,8 +162,20 @@ export default function OrganizationPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <span className="text-slate-400 text-xs block truncate">{m.mb_email || '—'}</span>
+                      <td className="px-4 py-3 max-w-[220px]">
+                        {(() => {
+                          const email = m.mb_email ||
+                            simEmailByName.get(decodeHtml(m.mb_fullname ?? '').toLowerCase().trim()) ||
+                            null
+                          return email
+                            ? (
+                              <span className="flex items-center gap-1.5 text-xs font-mono text-slate-400 group-hover:text-slate-300 transition-colors truncate">
+                                <Mail className="w-3 h-3 text-slate-600 shrink-0" />
+                                {email}
+                              </span>
+                            )
+                            : <span className="text-slate-600 text-xs">—</span>
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-slate-400 text-xs">
