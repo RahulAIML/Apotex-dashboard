@@ -24,7 +24,7 @@ const TEST_NAME_BLOCKLIST = new Set([
   'Gabriela Gonzalez Munguia',
 ])
 
-// ── Non-Apotex email domain blocklist ─────────────────────────
+// ── Specific non-Apotex email blocklist ───────────────────────
 const NON_APOTEX_EMAILS = new Set([
   'guadalupe.cuevas@audioweb.com.mx',   // audioweb tester, not an Apotex employee
 ])
@@ -36,30 +36,46 @@ const TEST_NAME_FRAGMENTS = [
 ]
 
 /**
- * Remove ALL non-Apotex sessions:
- *   1. Known test names (exact)
- *   2. Known non-Apotex emails
- *   3. Sessions with no email AND a test-looking name (partial match)
- *   4. Sessions with non-apotex email domains (when email is present)
+ * Remove ALL non-Apotex sessions. Three-layer isolation:
+ *
+ * Layer 1 — DB-level (upstream): Flask API is tenant-scoped to /apotex/;
+ *   roleplay_demorp6 uses `AND saex_rp_client = 'apotex'` in SQL.
+ *
+ * Layer 2 — Email domain guard (primary): any session that HAS an email
+ *   must have an @apotex.* domain (checked on the DOMAIN part only, not the
+ *   full string — avoids false-positives like notapotex@gmail.com).
+ *
+ * Layer 3 — Name guard (fallback for legacy sessions with no email): must
+ *   not match known-test names, must not be single-word (test/sandbox pattern),
+ *   must not contain known test name fragments.
  */
 export function filterTestUsers(sims: Simulation[]): Simulation[] {
   return sims.filter((s) => {
     const name  = (s.Usuario_Nombre ?? '').trim()
     const email = (s.Usuario ?? '').trim().toLowerCase()
 
-    // 1. Exact name blocklist
+    // 1. Exact name blocklist (legacy test accounts with no email)
     if (TEST_NAME_BLOCKLIST.has(name)) return false
 
-    // 2. Specific non-Apotex emails
+    // 2. Hard-reject known non-Apotex emails
     if (NON_APOTEX_EMAILS.has(email)) return false
 
-    // 3. If email present → must be @apotex domain
-    if (email && !email.includes('apotex')) return false
+    // 3. Email present → domain must contain 'apotex'
+    //    Check domain part only (after '@') so that strings like
+    //    "notapotex@gmail.com" are rejected, not mistakenly allowed.
+    if (email) {
+      const domain = email.split('@')[1] ?? ''
+      if (!domain.includes('apotex')) return false
+    }
 
-    // 4. If no email → check name against known test fragments
+    // 4. No email → legacy session; apply name-based guards
     if (!email) {
       const nameLower = name.toLowerCase()
+      // 4a. Fragment blocklist
       if (TEST_NAME_FRAGMENTS.some(f => nameLower.includes(f))) return false
+      // 4b. Single-word name with no email = sandbox/test pattern
+      //     Real Apotex employees always have first + last name
+      if (!name.includes(' ')) return false
     }
 
     return true
