@@ -1,7 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { AIAssistant } from '../ai/AIAssistant'
 import { useAppStore } from '../../store'
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -32,7 +31,6 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
-      <AIAssistant />
     </div>
   )
 }

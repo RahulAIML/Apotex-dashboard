@@ -6,6 +6,10 @@ import { useAppStore } from '../../store'
 import { buildAssistantPrompt } from '../../lib/assistantPrompt'
 import { cn } from '../../lib/cn'
 
+const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
+const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=`
+
 interface Message {
   role: 'user' | 'assistant'
   content: string
@@ -14,40 +18,41 @@ interface Message {
   pending?: boolean
 }
 
-/** Very basic markdown renderer — bold, bullet lists, line breaks */
+/** Minimal markdown renderer — bold, bullets, line breaks */
 function MdText({ text }: { text: string }) {
-  const lines = text.split('\n')
   return (
     <div className="space-y-1.5">
-      {lines.map((line, i) => {
+      {text.split('\n').map((line, i) => {
         const isBullet = /^[\-•*]\s/.test(line.trim())
-        const trimmed  = isBullet ? line.trim().slice(2) : line
-        const bold     = trimmed.split(/(\*\*[^*]+\*\*)/).map((seg, j) =>
+        const raw      = isBullet ? line.trim().slice(2) : line
+        const parts    = raw.split(/(\*\*[^*]+\*\*)/).map((seg, j) =>
           seg.startsWith('**') && seg.endsWith('**')
             ? <strong key={j} className="font-semibold">{seg.slice(2, -2)}</strong>
             : seg
         )
-        if (!trimmed && !isBullet) return <div key={i} className="h-1" />
+        if (!raw && !isBullet) return <div key={i} className="h-1" />
         return isBullet
-          ? <div key={i} className="flex gap-2"><span className="text-accent shrink-0 mt-px">•</span><span>{bold}</span></div>
-          : <p key={i}>{bold}</p>
+          ? <div key={i} className="flex gap-2"><span className="text-accent shrink-0 mt-px">•</span><span>{parts}</span></div>
+          : <p key={i}>{parts}</p>
       })}
     </div>
   )
 }
 
-const SUGGESTIONS_ES = [
-  '¿Quién necesita coaching urgente?',
-  '¿Cuál actividad tiene el menor puntaje?',
-  '¿Quiénes son los top performers?',
-  '¿Cuál es nuestra tasa de aprobación?',
-]
-const SUGGESTIONS_EN = [
-  'Who needs urgent coaching?',
-  'Which activity has the lowest score?',
-  'Who are the top performers?',
-  'What is our overall pass rate?',
-]
+const SUGGESTIONS = {
+  es: [
+    '¿Quién necesita coaching urgente?',
+    '¿Cuál actividad tiene el menor puntaje?',
+    '¿Quiénes son los top performers?',
+    '¿Cuál es nuestra tasa de aprobación?',
+  ],
+  en: [
+    'Who needs urgent coaching?',
+    'Which activity has the lowest score?',
+    'Who are the top performers?',
+    'What is our overall pass rate?',
+  ],
+}
 
 export function AssistantWidget() {
   const { language } = useAppStore()
@@ -55,25 +60,21 @@ export function AssistantWidget() {
   const location = useLocation()
   const { kpis, actStats, userStats, sims } = useDashboardData()
 
-  const [open,     setOpen]     = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input,    setInput]    = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [imageB64, setImageB64] = useState<string | null>(null)
-  const [imageMime,setImageMime]= useState<string>('image/jpeg')
+  const [open,      setOpen]      = useState(false)
+  const [messages,  setMessages]  = useState<Message[]>([])
+  const [input,     setInput]     = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [imageB64,  setImageB64]  = useState<string | null>(null)
+  const [imageMime, setImageMime] = useState<string>('image/jpeg')
 
-  const listRef    = useRef<HTMLDivElement>(null)
-  const inputRef   = useRef<HTMLTextAreaElement>(null)
-  const fileRef    = useRef<HTMLInputElement>(null)
+  const listRef  = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileRef  = useRef<HTMLInputElement>(null)
 
-  // Auto-scroll to bottom whenever messages change
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = listRef.current.scrollHeight
-    }
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
   }, [messages])
 
-  // Focus input when panel opens
   useEffect(() => {
     if (open) inputRef.current?.focus()
   }, [open])
@@ -82,55 +83,73 @@ export function AssistantWidget() {
     buildAssistantPrompt({
       language,
       currentPage: location.pathname,
-      kpis:       kpis ?? null,
-      actStats:   actStats ?? [],
-      userStats:  userStats ?? [],
-      sims:       sims ?? [],
+      kpis:      kpis ?? null,
+      actStats:  actStats ?? [],
+      userStats: userStats ?? [],
+      sims:      sims ?? [],
     }),
     [language, location.pathname, kpis, actStats, userStats, sims]
   )
 
   async function send(text: string, img?: { b64: string; mime: string }) {
     if (!text.trim() && !img) return
-    setLoading(true)
+    if (!GEMINI_KEY) {
+      const errMsg = es
+        ? 'Configura VITE_GEMINI_API_KEY en el archivo .env para activar el asistente.'
+        : 'Set VITE_GEMINI_API_KEY in your .env file to enable the assistant.'
+      setMessages(prev => [...prev,
+        { role: 'user', content: text },
+        { role: 'assistant', content: errMsg },
+      ])
+      return
+    }
 
-    // Build user message content for Anthropic API
-    const userContent: unknown[] = []
-    if (img) {
-      userContent.push({ type: 'image', source: { type: 'base64', media_type: img.mime, data: img.b64 } })
-    }
-    if (text.trim()) {
-      userContent.push({ type: 'text', text: text.trim() })
-    }
+    setLoading(true)
     const userMsg: Message = { role: 'user', content: text.trim(), imageBase64: img?.b64, imageMime: img?.mime }
-    const pendingMsg: Message = { role: 'assistant', content: '...', pending: true }
-    setMessages(prev => [...prev, userMsg, pendingMsg])
+    const pending:  Message = { role: 'assistant', content: '', pending: true }
+    setMessages(prev => [...prev, userMsg, pending])
     setInput('')
     setImageB64(null)
 
-    // Build conversation history for API (exclude pending)
-    const history = [...messages, userMsg].map(m => {
-      if (m.imageBase64) {
-        const content: unknown[] = [
-          { type: 'image', source: { type: 'base64', media_type: m.imageMime ?? 'image/jpeg', data: m.imageBase64 } },
-        ]
-        if (m.content) content.push({ type: 'text', text: m.content })
-        return { role: m.role, content }
+    // Build Gemini conversation format from history + new message
+    type GeminiPart = { text: string } | { inlineData: { mimeType: string; data: string } }
+    type GeminiMsg  = { role: 'user' | 'model'; parts: GeminiPart[] }
+
+    const history: GeminiMsg[] = [...messages, userMsg].map(m => {
+      const parts: GeminiPart[] = []
+      if (m.imageBase64 && m.imageMime) {
+        parts.push({ inlineData: { mimeType: m.imageMime, data: m.imageBase64 } })
       }
-      return { role: m.role, content: m.content }
+      if (m.content) parts.push({ text: m.content })
+      return { role: m.role === 'assistant' ? 'model' : 'user', parts }
     })
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch(GEMINI_URL + GEMINI_KEY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ systemPrompt: systemPrompt(), messages: history }),
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemPrompt() }] },
+          contents: history,
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+        }),
       })
-      const data = await res.json() as { text?: string; error?: string }
-      const reply = data.text ?? data.error ?? (es ? 'Sin respuesta.' : 'No response.')
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: res.statusText } })) as { error?: { message: string } }
+        throw new Error(err.error?.message ?? `HTTP ${res.status}`)
+      }
+
+      const data = await res.json() as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+      }
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
+        ?? (es ? 'Sin respuesta.' : 'No response.')
       setMessages(prev => prev.map(m => m.pending ? { ...m, content: reply, pending: false } : m))
-    } catch {
-      const errMsg = es ? 'Error al contactar el asistente.' : 'Error contacting the assistant.'
+    } catch (err) {
+      const errMsg = es
+        ? `Error: ${(err as Error).message}`
+        : `Error: ${(err as Error).message}`
       setMessages(prev => prev.map(m => m.pending ? { ...m, content: errMsg, pending: false } : m))
     } finally {
       setLoading(false)
@@ -140,28 +159,24 @@ export function AssistantWidget() {
   function handleKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      const img = imageB64 ? { b64: imageB64, mime: imageMime } : undefined
-      send(input, img)
+      send(input, imageB64 ? { b64: imageB64, mime: imageMime } : undefined)
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = ev => {
-      const result = ev.target?.result as string
-      // result is data:image/png;base64,<data> — we need just the data part
-      const b64 = result.split(',')[1]
-      setImageB64(b64)
+      const raw = ev.target?.result as string
+      setImageB64(raw.split(',')[1])
       setImageMime(file.type || 'image/jpeg')
     }
     reader.readAsDataURL(file)
-    // Reset file input so same file can be re-selected
     e.target.value = ''
   }
 
-  const suggestions = es ? SUGGESTIONS_ES : SUGGESTIONS_EN
+  const suggestions = es ? SUGGESTIONS.es : SUGGESTIONS.en
 
   return (
     <>
@@ -169,8 +184,8 @@ export function AssistantWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-accent shadow-lg shadow-accent/30 flex items-center justify-center hover:bg-red-700 transition-all hover:scale-105 active:scale-95"
           title={es ? 'Asistente de Analytics' : 'Analytics Assistant'}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-accent shadow-lg shadow-accent/30 flex items-center justify-center hover:bg-red-700 transition-all hover:scale-105 active:scale-95"
         >
           <Sparkles className="w-6 h-6 text-white" />
         </button>
@@ -178,7 +193,8 @@ export function AssistantWidget() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-4 right-4 z-50 flex flex-col rounded-2xl overflow-hidden shadow-[0_8px_48px_rgba(0,0,0,0.55),0_0_0_0.5px_rgba(255,255,255,0.08)] bg-card border border-line/60"
+        <div
+          className="fixed bottom-4 right-4 z-50 flex flex-col rounded-2xl overflow-hidden bg-card border border-line/60 shadow-[0_8px_48px_rgba(0,0,0,0.55),0_0_0_0.5px_rgba(255,255,255,0.08)]"
           style={{ width: 'min(380px, calc(100vw - 2rem))', height: 'min(620px, calc(100vh - 5rem))' }}
         >
           {/* Header */}
@@ -191,45 +207,43 @@ export function AssistantWidget() {
                 {es ? 'Asistente de Analytics' : 'Analytics Assistant'}
               </p>
               <p className="text-[11px] text-[#7a9cc0] leading-tight">
-                {es ? 'Datos en tiempo real · Apotex' : 'Live data · Apotex'}
+                Gemini · {es ? 'Datos en tiempo real' : 'Live data'}
               </p>
             </div>
             <div className="flex items-center gap-1">
               {messages.length > 0 && (
                 <button
                   onClick={() => setMessages([])}
+                  title={es ? 'Limpiar' : 'Clear'}
                   className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.07] transition-colors"
-                  title={es ? 'Limpiar conversación' : 'Clear conversation'}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.07] transition-colors"
                 title={es ? 'Cerrar' : 'Close'}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.07] transition-colors"
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Messages */}
+          {/* Message list */}
           <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
             {messages.length === 0 ? (
               <div className="flex flex-col gap-3 h-full">
-                {/* Welcome */}
                 <div className="flex items-start gap-2.5">
                   <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
                     <Sparkles className="w-3 h-3 text-accent" />
                   </div>
                   <div className="bg-surface border border-line/40 rounded-xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-300 leading-relaxed">
                     {es
-                      ? `Hola 👋 Soy tu asistente de analytics con acceso a los datos en tiempo real de Apotex — ${kpis?.totalSimulations ?? 0} simulaciones, ${kpis?.activeAdvisors ?? 0} asesores activos. ¿En qué puedo ayudarte?`
-                      : `Hi 👋 I'm your analytics assistant with live access to Apotex data — ${kpis?.totalSimulations ?? 0} simulations, ${kpis?.activeAdvisors ?? 0} active advisors. How can I help?`}
+                      ? `Hola 👋 Soy tu asistente de analytics con acceso a los datos en tiempo real de Apotex — **${kpis?.totalSimulations ?? 0} simulaciones**, **${kpis?.activeAdvisors ?? 0} asesores activos**. ¿En qué puedo ayudarte?`
+                      : `Hi 👋 I'm your analytics assistant with live access to Apotex data — **${kpis?.totalSimulations ?? 0} simulations**, **${kpis?.activeAdvisors ?? 0} active advisors**. How can I help?`}
                   </div>
                 </div>
-                {/* Suggestion chips */}
                 <div className="space-y-2 mt-1">
                   <p className="text-[10px] text-slate-600 uppercase tracking-wider px-1">
                     {es ? 'Preguntas frecuentes' : 'Suggested questions'}
@@ -258,17 +272,16 @@ export function AssistantWidget() {
                     m.role === 'user'
                       ? 'bg-accent text-white rounded-tr-sm'
                       : 'bg-surface border border-line/40 text-slate-300 rounded-tl-sm',
-                    m.pending && 'animate-pulse',
                   )}>
                     {m.imageBase64 && (
                       <img
-                        src={`data:${m.imageMime ?? 'image/jpeg'};base64,${m.imageBase64}`}
+                        src={`data:${m.imageMime};base64,${m.imageBase64}`}
                         alt="attached"
                         className="rounded-lg mb-2 max-w-full max-h-40 object-cover"
                       />
                     )}
                     {m.pending
-                      ? <span className="text-slate-500">{es ? 'Pensando…' : 'Thinking…'}</span>
+                      ? <span className="text-slate-500 animate-pulse">{es ? 'Pensando…' : 'Thinking…'}</span>
                       : <MdText text={m.content} />}
                   </div>
                 </div>
@@ -276,7 +289,7 @@ export function AssistantWidget() {
             )}
           </div>
 
-          {/* Image preview strip */}
+          {/* Image preview */}
           {imageB64 && (
             <div className="px-4 py-2 border-t border-line/20 shrink-0">
               <div className="relative inline-block">
@@ -295,13 +308,13 @@ export function AssistantWidget() {
             </div>
           )}
 
-          {/* Input */}
+          {/* Input row */}
           <div className="px-3 py-3 border-t border-line/30 bg-surface/50 shrink-0 flex items-end gap-2">
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
             <button
               onClick={() => fileRef.current?.click()}
-              className="p-2 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-colors shrink-0 self-end mb-0.5"
               title={es ? 'Adjuntar imagen' : 'Attach image'}
+              className="p-2 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-colors shrink-0 self-end mb-0.5"
             >
               <Paperclip className="w-4 h-4" />
             </button>
@@ -317,13 +330,10 @@ export function AssistantWidget() {
               style={{ maxHeight: '100px', overflowY: 'auto' }}
             />
             <button
-              onClick={() => {
-                const img = imageB64 ? { b64: imageB64, mime: imageMime } : undefined
-                send(input, img)
-              }}
+              onClick={() => send(input, imageB64 ? { b64: imageB64, mime: imageMime } : undefined)}
               disabled={loading || (!input.trim() && !imageB64)}
-              className="p-2 rounded-xl bg-accent hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 self-end"
               title={es ? 'Enviar' : 'Send'}
+              className="p-2 rounded-xl bg-accent hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0 self-end"
             >
               <Send className="w-4 h-4 text-white" />
             </button>
