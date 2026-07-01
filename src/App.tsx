@@ -15,6 +15,7 @@ import ExecutiveReportPage from './pages/ExecutiveReportPage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import { AssistantWidget } from './components/assistant/AssistantWidget'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ export default function App() {
             </Routes>
           </ErrorBoundary>
         </Shell>
+        <AssistantWidget />
       </BrowserRouter>
     </QueryClientProvider>
   )
