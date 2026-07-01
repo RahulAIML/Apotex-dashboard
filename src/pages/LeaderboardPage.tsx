@@ -30,7 +30,10 @@ export default function LeaderboardPage() {
     let result = allRows
     if (search.trim()) {
       const q = search.toLowerCase()
-      result = result.filter((u) => u.name.toLowerCase().includes(q))
+      result = result.filter((u) =>
+        u.name.toLowerCase().includes(q) ||
+        (u.userId ?? '').toLowerCase().includes(q)
+      )
     }
     return limitN > 0 ? result.slice(0, limitN) : result
   }, [allRows, search, limitN])
@@ -112,9 +115,16 @@ export default function LeaderboardPage() {
                     <RankBadge rank={i} />
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-slate-200 font-medium text-sm truncate max-w-[140px] sm:max-w-none">{u.name}</span>
-                      {i === 0 && <Trophy className="w-3.5 h-3.5 text-yellow-500 shrink-0" />}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-200 font-medium text-sm truncate max-w-[140px] sm:max-w-xs">{u.name}</span>
+                        {i === 0 && <Trophy className="w-3.5 h-3.5 text-yellow-500 shrink-0" />}
+                      </div>
+                      {u.userId && (
+                        <p className="text-[11px] text-slate-600 font-mono mt-0.5 truncate max-w-[140px] sm:max-w-xs">
+                          {u.userId}
+                        </p>
+                      )}
                     </div>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-slate-400 hidden sm:table-cell">{u.count}</td>

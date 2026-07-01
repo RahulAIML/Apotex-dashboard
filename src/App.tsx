@@ -11,6 +11,7 @@ import CoachingPage from './pages/CoachingPage'
 // RolPlay + Supervisors pages removed — Apotex has no RolPlay data (video_answers = 0)
 import BusinessLinesPage from './pages/BusinessLinesPage'
 import ReportsPage from './pages/ReportsPage'
+import ExecutiveReportPage from './pages/ExecutiveReportPage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
@@ -38,6 +39,7 @@ export default function App() {
               {/* /rolplay and /supervisors removed — Apotex has no RolPlay module */}
               <Route path="/business-lines" element={<BusinessLinesPage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/executive-report" element={<ExecutiveReportPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

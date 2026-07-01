@@ -221,6 +221,15 @@ html:not(.dark) .text-slate-400 { color: #64748b; }
   background-size: 200% 100%;
 }
 
+/* Print: show only executive report content */
+@media print {
+  aside, header { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+  body { background: #fff !important; }
+  #exec-report { box-shadow: none !important; border-radius: 0 !important; }
+  .page-fade { animation: none !important; }
+}
+
 /* Recharts overrides */
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {

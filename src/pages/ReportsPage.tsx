@@ -1,7 +1,8 @@
+import { Link } from 'react-router-dom'
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { useDashboardData } from '../hooks/useDashboardData'
-import { FileDown, BarChart3, Building2, Users, Activity } from 'lucide-react'
+import { FileDown, BarChart3, Building2, Users, Activity, FileText, ArrowRight } from 'lucide-react'
 
 function ReportCard({
   icon: Icon,
@@ -159,6 +160,32 @@ export default function ReportsPage() {
         <h1 className="text-xl sm:text-2xl font-bold text-slate-50 tracking-tight">{t('page_reports_title')}</h1>
         <p className="text-slate-500 text-sm mt-0.5">{t('page_reports_subtitle')}</p>
       </div>
+
+      {/* Executive Report banner */}
+      <Link
+        to="/executive-report"
+        className="group flex items-center justify-between gap-4 card p-5 hover:border-accent/50 bg-gradient-to-r from-card to-accent/5 transition-all"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-accent/15 group-hover:bg-accent/25 transition-colors flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-accent" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-100">
+              {es ? 'Informe Ejecutivo de Desempeño' : 'Executive Performance Report'}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {es
+                ? 'Informe oficial con KPIs, actividades, distribución de puntajes y top performers — datos en tiempo real.'
+                : 'Official report with KPIs, activities, score distribution, and top performers — live data.'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-accent shrink-0">
+          {es ? 'Ver informe' : 'View report'}
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+        </div>
+      </Link>
 
       {/* Data summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
