@@ -1,6 +1,6 @@
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
-import { Sun, Moon, Globe, Info } from 'lucide-react'
+import { Sun, Moon, Globe } from 'lucide-react'
 import { cn } from '../lib/cn'
 
 export default function SettingsPage() {
@@ -90,15 +90,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Note */}
-      <div className="flex items-start gap-2 bg-surface border border-line/40 rounded-lg px-4 py-3">
-        <Info className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
-        <p className="text-xs text-slate-500">
-          {es
-            ? 'Configuraciones avanzadas de usuarios, permisos y notificaciones estarán disponibles en futuras versiones.'
-            : 'Advanced user settings, permissions, and notifications will be available in future versions.'}
-        </p>
-      </div>
     </div>
   )
 }

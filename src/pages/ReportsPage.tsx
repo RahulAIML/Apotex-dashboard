@@ -1,45 +1,57 @@
 import { useAppStore } from '../store'
 import { useTranslation } from '../lib/i18n'
 import { useDashboardData } from '../hooks/useDashboardData'
-// RolPlay not active for Apotex — video_answers empty
-import { FileDown, BarChart3, Mic2, Users, Activity } from 'lucide-react'
+import { FileDown, BarChart3, Building2, Users, Activity } from 'lucide-react'
 
 function ReportCard({
   icon: Icon,
   title,
   description,
-  tag,
+  onClick,
+  disabled = false,
+  meta,
 }: {
   icon: React.ComponentType<{ className?: string }>
   title: string
   description: string
-  tag: string
+  onClick: () => void
+  disabled?: boolean
+  meta?: string
 }) {
   return (
-    <div className="card p-5 flex items-start gap-4 hover:border-accent/30 transition-colors">
-      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="card p-5 flex items-start gap-4 hover:border-accent/40 transition-all text-left w-full disabled:opacity-40 disabled:cursor-not-allowed group"
+    >
+      <div className="w-10 h-10 rounded-xl bg-accent/10 group-hover:bg-accent/20 transition-colors flex items-center justify-center shrink-0">
         <Icon className="w-5 h-5 text-accent" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-3 mb-1">
           <p className="text-sm font-semibold text-slate-200">{title}</p>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-700 text-slate-400 whitespace-nowrap shrink-0">{tag}</span>
+          <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent whitespace-nowrap shrink-0">
+            <FileDown className="w-3 h-3" />
+            CSV
+          </span>
         </div>
         <p className="text-xs text-slate-500">{description}</p>
+        {meta && <p className="text-xs text-slate-600 mt-1.5">{meta}</p>}
       </div>
-    </div>
+    </button>
   )
 }
 
 export default function ReportsPage() {
   const { language } = useAppStore()
   const t = useTranslation(language)
-  const { kpis } = useDashboardData()
+  const { kpis, sims, members, actStats, userStats, trend } = useDashboardData()
   const simCount = kpis?.totalSimulations ?? 0
   const rpCount = 0 // RolPlay not active for Apotex — video_answers empty
+  const es = language === 'es'
 
   function downloadCSV(rows: string[][], filename: string) {
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -52,22 +64,94 @@ export default function ReportsPage() {
   function exportSimSummary() {
     downloadCSV(
       [
-        [language === 'es' ? 'Métrica' : 'Metric', language === 'es' ? 'Valor' : 'Value'],
-        [language === 'es' ? 'Total Simulaciones' : 'Total Simulations', String(simCount)],
-        [language === 'es' ? 'Puntaje Promedio' : 'Average Score', String(kpis?.averageScore ?? 0) + '%'],
-        [language === 'es' ? 'Tasa de Aprobación' : 'Pass Rate', String(kpis?.passRate ?? 0) + '%'],
-        [language === 'es' ? 'Asesores Activos' : 'Active Advisors', String(kpis?.activeAdvisors ?? 0)],
-        [language === 'es' ? 'Aprobados' : 'Passed', String(kpis?.passCount ?? 0)],
-        [language === 'es' ? 'Reprobados' : 'Failed', String(kpis?.failCount ?? 0)],
+        [es ? 'Métrica' : 'Metric', es ? 'Valor' : 'Value'],
+        [es ? 'Total Simulaciones' : 'Total Simulations', String(simCount)],
+        [es ? 'Puntaje Promedio' : 'Average Score', String(kpis?.averageScore ?? 0) + '%'],
+        [es ? 'Tasa de Aprobación' : 'Pass Rate', String(kpis?.passRate ?? 0) + '%'],
+        [es ? 'Asesores Activos' : 'Active Advisors', String(kpis?.activeAdvisors ?? 0)],
+        [es ? 'Aprobados' : 'Passed', String(kpis?.passCount ?? 0)],
+        [es ? 'Reprobados' : 'Failed', String(kpis?.failCount ?? 0)],
       ],
       `apotex_simulator_summary_${new Date().toISOString().split('T')[0]}.csv`,
     )
   }
 
-  // RolPlay not active for Apotex — this export is disabled
-  function exportRpSummary() { return }
+  function exportRpSummary() { return } // RolPlay not active for Apotex
 
-  const es = language === 'es'
+  function exportTrendReport() {
+    if (!trend?.length) return
+    const header = es
+      ? ['Fecha', 'Puntaje Promedio', 'Simulaciones', 'Tasa de Aprobación']
+      : ['Date', 'Avg Score', 'Simulations', 'Pass Rate']
+    const rows = [header, ...trend.map(p => [p.date, p.avgScore + '%', String(p.count), p.passRate + '%'])]
+    downloadCSV(rows, `apotex_trend_${new Date().toISOString().split('T')[0]}.csv`)
+  }
+
+  function exportActivityReport() {
+    if (!actStats?.length) return
+    const header = es
+      ? ['Actividad', 'Tipo', 'Simulaciones', 'Puntaje Promedio', 'Aprobados', 'Reprobados', 'Tasa de Aprobación']
+      : ['Activity', 'Type', 'Simulations', 'Avg Score', 'Passed', 'Failed', 'Pass Rate']
+    const rows = [
+      header,
+      ...actStats.map(a => [
+        a.name, a.activityType, String(a.count),
+        a.avgScore > 0 ? a.avgScore + '%' : '—',
+        String(a.passCount), String(a.failCount),
+        a.avgScore > 0 ? a.passRate + '%' : '—',
+      ]),
+    ]
+    downloadCSV(rows, `apotex_activities_${new Date().toISOString().split('T')[0]}.csv`)
+  }
+
+  function exportBranchReport() {
+    if (!members.length) return
+    const byEmail: Record<string, typeof members[0]> = {}
+    members.forEach(m => { byEmail[(m.mb_email ?? '').toLowerCase()] = m })
+
+    const data: Record<string, { simCount: number; totalScore: number; scored: number; passCount: number }> = {}
+    members.forEach(m => {
+      const br = (m.mb_branch || (es ? 'Sin Sucursal' : 'No Branch')).trim()
+      if (!data[br]) data[br] = { simCount: 0, totalScore: 0, scored: 0, passCount: 0 }
+    })
+    sims.forEach(s => {
+      const m = byEmail[(s.Usuario || '').toLowerCase()]
+      if (!m) return
+      const br = (m.mb_branch || (es ? 'Sin Sucursal' : 'No Branch')).trim()
+      if (!data[br]) data[br] = { simCount: 0, totalScore: 0, scored: 0, passCount: 0 }
+      data[br].simCount++
+      if (s.Calificacion != null && s.Calificacion > 0) { data[br].totalScore += s.Calificacion; data[br].scored++ }
+      if (s.Calificacion != null && s.Calificacion >= 70) data[br].passCount++
+    })
+
+    const header = es
+      ? ['Sucursal', 'Simulaciones', 'Puntaje Promedio', 'Tasa de Aprobación']
+      : ['Branch', 'Simulations', 'Avg Score', 'Pass Rate']
+    const rows = [header, ...Object.entries(data).map(([br, d]) => {
+      const avg  = d.scored ? Math.round(d.totalScore / d.scored) : 0
+      const pass = d.scored ? Math.round(d.passCount / d.scored * 100) : 0
+      return [br, String(d.simCount), avg > 0 ? avg + '%' : '—', pass > 0 ? pass + '%' : '—']
+    })]
+    downloadCSV(rows, `apotex_branch_performance_${new Date().toISOString().split('T')[0]}.csv`)
+  }
+
+  function exportAdvisorReport() {
+    if (!userStats?.length) return
+    const header = es
+      ? ['Asesor', 'Email', 'Simulaciones', 'Puntaje Promedio', 'Mejor Puntaje', 'Aprobados', 'Reprobados', 'Tasa de Aprobación']
+      : ['Advisor', 'Email', 'Simulations', 'Avg Score', 'Best Score', 'Passed', 'Failed', 'Pass Rate']
+    const rows = [
+      header,
+      ...[...userStats].sort((a, b) => a.name.localeCompare(b.name)).map(u => [
+        u.name, u.userId, String(u.count),
+        u.avgScore > 0 ? u.avgScore + '%' : '—',
+        u.bestScore > 0 ? u.bestScore + '%' : '—',
+        String(u.passCount), String(u.failCount),
+        u.avgScore > 0 ? u.passRate + '%' : '—',
+      ]),
+    ]
+    downloadCSV(rows, `apotex_advisors_${new Date().toISOString().split('T')[0]}.csv`)
+  }
 
   return (
     <div className="space-y-6">
@@ -79,11 +163,11 @@ export default function ReportsPage() {
       {/* Data summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: BarChart3, label: es ? 'Simulaciones' : 'Simulations', value: simCount.toLocaleString() },
-          { icon: Mic2, label: es ? 'Sesiones RolPlay' : 'RolPlay Sessions', value: rpCount.toLocaleString() },
-          { icon: Users, label: es ? 'Asesores Activos' : 'Active Advisors', value: String(kpis?.activeAdvisors ?? 0) },
-          { icon: Activity, label: es ? 'Actividades' : 'Activities', value: String(kpis?.totalActivities ?? 0) },
-        ].map((item) => (
+          { icon: BarChart3, label: es ? 'Simulaciones'       : 'Simulations',      value: simCount.toLocaleString() },
+          { icon: Activity,  label: es ? 'Actividades'        : 'Activities',       value: String(kpis?.totalActivities ?? 0) },
+          { icon: Users,     label: es ? 'Asesores Activos'   : 'Active Advisors',  value: String(kpis?.activeAdvisors ?? 0) },
+          { icon: Building2, label: es ? 'Miembros Totales'   : 'Total Members',    value: String(kpis?.totalMembers ?? 0) },
+        ].map(item => (
           <div key={item.label} className="card p-4 flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
               <item.icon className="w-4 h-4 text-accent" />
@@ -96,7 +180,7 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {/* Export cards */}
+      {/* Quick exports */}
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-600 mb-3">
           {es ? 'Exportar Datos' : 'Export Data'}
@@ -142,35 +226,51 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Report templates */}
+      {/* Detailed reports */}
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-600 mb-3">
-          {es ? 'Plantillas de Reporte' : 'Report Templates'}
+          {es ? 'Reportes Detallados' : 'Detailed Reports'}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ReportCard
             icon={BarChart3}
-            title={es ? 'Reporte Ejecutivo Semanal' : 'Weekly Executive Report'}
-            description={es ? 'KPIs, tendencias y top performers del período.' : 'KPIs, trends, and top performers for the period.'}
-            tag={es ? 'Próximamente' : 'Coming soon'}
-          />
-          <ReportCard
-            icon={Mic2}
-            title={es ? 'Análisis de RolPlay por Actividad' : 'RolPlay Analysis by Activity'}
-            description={es ? 'Desglose de puntajes IA por actividad y criterios MC.' : 'AI score breakdown by activity and MC criteria.'}
-            tag={es ? 'Próximamente' : 'Coming soon'}
-          />
-          <ReportCard
-            icon={Users}
-            title={es ? 'Rendimiento por Sucursal' : 'Branch Performance Report'}
-            description={es ? 'Comparativa de sucursales, supervisores y asesores.' : 'Branch, supervisor, and advisor comparison.'}
-            tag={es ? 'Próximamente' : 'Coming soon'}
+            title={es ? 'Tendencia por Fecha' : 'Score Trend by Date'}
+            description={es
+              ? 'Evolución diaria de puntaje promedio, simulaciones y tasa de aprobación.'
+              : 'Daily evolution of average score, simulations, and pass rate.'}
+            onClick={exportTrendReport}
+            disabled={!trend?.length}
+            meta={trend?.length ? `${trend.length} ${es ? 'días con datos' : 'days of data'}` : undefined}
           />
           <ReportCard
             icon={Activity}
-            title={es ? 'Progresión de Asesores' : 'Advisor Progression'}
-            description={es ? 'Evolución individual de puntajes en el tiempo.' : 'Individual score evolution over time.'}
-            tag={es ? 'Próximamente' : 'Coming soon'}
+            title={es ? 'Rendimiento por Actividad' : 'Activity Performance'}
+            description={es
+              ? 'Simulaciones, puntaje promedio y tasa de aprobación por actividad.'
+              : 'Simulations, avg score, and pass rate broken down by activity.'}
+            onClick={exportActivityReport}
+            disabled={!actStats?.length}
+            meta={actStats?.length ? `${actStats.length} ${es ? 'actividades' : 'activities'}` : undefined}
+          />
+          <ReportCard
+            icon={Building2}
+            title={es ? 'Rendimiento por Sucursal' : 'Branch Performance'}
+            description={es
+              ? 'Comparativa de sucursales: simulaciones, puntaje promedio y aprobación.'
+              : 'Branch comparison: simulations, average score, and pass rate.'}
+            onClick={exportBranchReport}
+            disabled={!members.length}
+            meta={members.length ? `${members.length} ${es ? 'miembros registrados' : 'registered members'}` : undefined}
+          />
+          <ReportCard
+            icon={Users}
+            title={es ? 'Reporte por Asesor' : 'Advisor Report'}
+            description={es
+              ? 'Listado completo de asesores con puntajes, mejor resultado y tasa de aprobación.'
+              : 'Full advisor list with scores, best result, and pass rate.'}
+            onClick={exportAdvisorReport}
+            disabled={!userStats?.length}
+            meta={userStats?.length ? `${userStats.length} ${es ? 'asesores' : 'advisors'}` : undefined}
           />
         </div>
       </div>

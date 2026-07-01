@@ -14,13 +14,13 @@
 }
 
 .dark {
-  --color-bg: 7 14 28;
-  --color-surface: 12 22 40;
-  --color-card: 15 26 46;
-  --color-card-hover: 21 32 53;
-  --color-line: 26 45 69;
-  --color-line-subtle: 17 32 56;
-  --text-base: #f8fafc;
+  --color-bg: 5 8 18;            /* #050812 deep navy */
+  --color-surface: 8 13 26;      /* #080d1a panel bg */
+  --color-card: 11 18 36;        /* #0b1224 card surface */
+  --color-card-hover: 15 24 46;  /* #0f182e hover */
+  --color-line: 24 42 72;        /* #182a48 borders */
+  --color-line-subtle: 13 21 42; /* #0d152a subtle dividers */
+  --text-base: #e2e8f0;          /* softer white */
 }
 /* ──────────────────────────────────────────────────────────────────────── */
 
@@ -89,8 +89,23 @@ html:not(.dark) .text-slate-300 { color: #475569; }
 html:not(.dark) .text-slate-400 { color: #64748b; }
 
 /* Dark mode: boost muted text so it's readable on navy */
-.dark .text-slate-500 { color: #94a3b8; }
-.dark .text-slate-600 { color: #94a3b8; }
+.dark .text-slate-500 { color: #8899b4; }
+.dark .text-slate-600 { color: #8899b4; }
+
+/* Dark mode: card depth — subtle shadow separates cards from bg */
+.dark .card,
+.dark .card-interactive {
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.45),
+    0 0 0 0.5px rgba(255, 255, 255, 0.025);
+}
+
+/* Dark mode: elevated surfaces (tooltips, dropdowns) */
+.dark .elevated {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.65),
+    0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
 /* ─────────────────────────────────────────────────────────────── */
 
 @layer components {
