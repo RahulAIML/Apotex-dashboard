@@ -36,46 +36,40 @@ const TEST_NAME_FRAGMENTS = [
 ]
 
 /**
- * Remove ALL non-Apotex sessions. Three-layer isolation:
+ * Remove known test/internal/non-Apotex sessions while keeping ALL real Apotex data.
  *
- * Layer 1 — DB-level (upstream): Flask API is tenant-scoped to /apotex/;
- *   roleplay_demorp6 uses `AND saex_rp_client = 'apotex'` in SQL.
- *
- * Layer 2 — Email domain guard (primary): any session that HAS an email
- *   must have an @apotex.* domain (checked on the DOMAIN part only, not the
- *   full string — avoids false-positives like notapotex@gmail.com).
- *
- * Layer 3 — Name guard (fallback for legacy sessions with no email): must
- *   not match known-test names, must not be single-word (test/sandbox pattern),
- *   must not contain known test name fragments.
+ * Rules applied in order:
+ *   1. Exact name blocklist  — known pilot/sandbox accounts (no email)
+ *   2. Hard email blocklist  — specific non-Apotex addresses on record
+ *   3. Email domain guard    — if an email IS present, its domain must include 'apotex'
+ *                              (checked on domain part only — after '@' — to avoid
+ *                              false-positives like "notapotex@gmail.com" passing)
+ *   4. Name-fragment guard   — fallback for legacy sessions with no email:
+ *                              reject known test-name substrings only.
+ *                              Single-word-name check intentionally NOT applied —
+ *                              real Apotex employees may be registered with one name.
  */
 export function filterTestUsers(sims: Simulation[]): Simulation[] {
   return sims.filter((s) => {
     const name  = (s.Usuario_Nombre ?? '').trim()
     const email = (s.Usuario ?? '').trim().toLowerCase()
 
-    // 1. Exact name blocklist (legacy test accounts with no email)
+    // 1. Exact name blocklist
     if (TEST_NAME_BLOCKLIST.has(name)) return false
 
     // 2. Hard-reject known non-Apotex emails
     if (NON_APOTEX_EMAILS.has(email)) return false
 
     // 3. Email present → domain must contain 'apotex'
-    //    Check domain part only (after '@') so that strings like
-    //    "notapotex@gmail.com" are rejected, not mistakenly allowed.
     if (email) {
       const domain = email.split('@')[1] ?? ''
       if (!domain.includes('apotex')) return false
     }
 
-    // 4. No email → legacy session; apply name-based guards
+    // 4. No email → name-fragment guard only (no other exclusions)
     if (!email) {
       const nameLower = name.toLowerCase()
-      // 4a. Fragment blocklist
       if (TEST_NAME_FRAGMENTS.some(f => nameLower.includes(f))) return false
-      // 4b. Single-word name with no email = sandbox/test pattern
-      //     Real Apotex employees always have first + last name
-      if (!name.includes(' ')) return false
     }
 
     return true
