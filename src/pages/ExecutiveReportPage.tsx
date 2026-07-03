@@ -75,12 +75,11 @@ export default function ExecutiveReportPage() {
         {/* Document header */}
         <div className="bg-[#0b1735] px-8 py-7 flex items-start justify-between gap-6 flex-wrap">
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-[#dc2626] flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-base">A</span>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-white rounded-lg px-3 py-2 shrink-0">
+                <img src="/apotex-logo.webp" alt="Apotex" className="h-8 w-auto object-contain" />
               </div>
               <div>
-                <p className="text-xs text-[#7a9cc0] font-semibold uppercase tracking-widest">Apotex</p>
                 <p className="text-[11px] text-[#5a7ca0]">Analytics Intelligence Platform</p>
               </div>
             </div>

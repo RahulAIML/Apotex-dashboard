@@ -130,7 +130,10 @@ export function Sidebar() {
         {/* Logo */}
         <div className="flex items-center h-16 px-4 shrink-0 border-b" style={{ borderColor: '#1a2f4a' }}>
           <div className="flex items-center gap-3 min-w-0">
-            <img src="/apotex-logo.svg" alt="Apotex" className="w-9 h-9 shrink-0" />
+            {/* Collapsed: logo in a white icon badge */}
+            <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden p-1">
+              <img src="/apotex-logo.webp" alt="Apotex" className="w-full h-full object-contain" />
+            </div>
             <AnimatePresence>
               {!sidebarCollapsed && (
                 <motion.div
@@ -138,12 +141,13 @@ export function Sidebar() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -8 }}
                   transition={{ duration: 0.15 }}
-                  className="flex flex-col min-w-0"
+                  className="flex flex-col min-w-0 gap-0.5"
                 >
-                  <span className="text-white font-bold text-sm leading-tight tracking-tight whitespace-nowrap">
-                    Apotex
-                  </span>
-                  <span className="text-[10px] leading-tight whitespace-nowrap" style={{ color: '#6b8aad' }}>
+                  {/* Expanded: full wordmark */}
+                  <div className="bg-white rounded-md px-2 py-1 inline-flex">
+                    <img src="/apotex-logo.webp" alt="Apotex" className="h-5 w-auto object-contain" />
+                  </div>
+                  <span className="text-[10px] leading-tight whitespace-nowrap px-0.5" style={{ color: '#6b8aad' }}>
                     {t('sidebar_tagline')}
                   </span>
                 </motion.div>
@@ -179,10 +183,14 @@ export function Sidebar() {
           >
             <div className="flex items-center justify-between h-16 px-4 shrink-0 border-b" style={{ borderColor: '#1a2f4a' }}>
               <div className="flex items-center gap-3">
-                <img src="/apotex-logo.svg" alt="Apotex" className="w-9 h-9 shrink-0" />
-                <div className="flex flex-col">
-                  <span className="text-white font-bold text-sm leading-tight">Apotex</span>
-                  <span className="text-[10px] leading-tight" style={{ color: '#6b8aad' }}>{t('sidebar_tagline')}</span>
+                <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 overflow-hidden p-1">
+                  <img src="/apotex-logo.webp" alt="Apotex" className="w-full h-full object-contain" />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <div className="bg-white rounded-md px-2 py-1 inline-flex">
+                    <img src="/apotex-logo.webp" alt="Apotex" className="h-5 w-auto object-contain" />
+                  </div>
+                  <span className="text-[10px] leading-tight px-0.5" style={{ color: '#6b8aad' }}>{t('sidebar_tagline')}</span>
                 </div>
               </div>
               <button

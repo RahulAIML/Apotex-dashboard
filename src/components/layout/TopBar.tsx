@@ -25,11 +25,18 @@ export function TopBar() {
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* Center: Platform title */}
+      {/* Center: Official Apotex logo */}
       <div className="flex-1 flex justify-center">
-        <h1 className="text-lg font-bold text-gray-900 dark:text-slate-100 tracking-tight hidden sm:block">
-          {t('platform_tagline')}
-        </h1>
+        <div className="hidden sm:flex items-center gap-2.5">
+          <img
+            src="/apotex-logo.webp"
+            alt="Apotex"
+            className="h-7 w-auto object-contain dark:bg-white dark:rounded dark:px-2 dark:py-0.5"
+          />
+          <span className="text-xs font-medium text-gray-400 dark:text-slate-500 border-l border-gray-200 dark:border-white/10 pl-2.5 leading-tight">
+            {t('platform_tagline')}
+          </span>
+        </div>
       </div>
 
       {/* Right: refresh + language + user */}
