@@ -207,7 +207,7 @@ export function AssistantWidget() {
                 {es ? 'Asistente de Analytics' : 'Analytics Assistant'}
               </p>
               <p className="text-[11px] text-[#7a9cc0] leading-tight">
-                Gemini · {es ? 'Datos en tiempo real' : 'Live data'}
+                Powered by RolPlay
               </p>
             </div>
             <div className="flex items-center gap-1">
