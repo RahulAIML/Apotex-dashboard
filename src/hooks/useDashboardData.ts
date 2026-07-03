@@ -29,7 +29,15 @@ export function useDashboardData() {
   const isError     = activitiesQ.isError || simsQ.isError || membersQ.isError || adminsQ.isError
 
   const activities = activitiesQ.data?.data ?? []
-  const sims = filterTestUsers(simsQ.data ?? [])
+
+  // Known-good activity ID set — derived from the cleaned activities list.
+  // Guard (!activities.length) prevents false exclusions during load.
+  // This automatically drops sessions for any activity removed from the list
+  // (e.g. the legacy "APECS - Periamid" duplicate removed in fetchActivities).
+  const validActivityIds = new Set(activities.map(a => a.ID_Caso_de_Uso))
+  const sims = filterTestUsers(simsQ.data ?? []).filter(s =>
+    !activities.length || validActivityIds.has(s.ID_Caso_de_Uso)
+  )
 
   // Filter out internal Rolplay accounts (udev/udemo/ucontenido @rolplay.net)
   // so member count = 57 (real Apotex users) not 61 (includes dev accounts)

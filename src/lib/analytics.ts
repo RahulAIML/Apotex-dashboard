@@ -60,11 +60,10 @@ export function filterTestUsers(sims: Simulation[]): Simulation[] {
     // 2. Hard-reject known non-Apotex emails
     if (NON_APOTEX_EMAILS.has(email)) return false
 
-    // 3. Email present → domain must contain 'apotex'
-    if (email) {
-      const domain = email.split('@')[1] ?? ''
-      if (!domain.includes('apotex')) return false
-    }
+    // 3. Email present → must be an @apotex.com user
+    //    Mirrors MX team SQL exactly:
+    //    WHERE members.mb_user LIKE '%@apotex.com%'
+    if (email && !email.includes('@apotex.com')) return false
 
     // 4. No email → name-fragment guard only (no other exclusions)
     if (!email) {

@@ -52,12 +52,23 @@ async function fetchJSON<T>(url: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+// "APECS - Periamid" is a legacy duplicate exercise — removed per MX team (2025-07-02).
+// It appears in dim_actividades but has no current sessions; keeping it inflates
+// the exercise count above 11. Match is case-insensitive on Caso_de_Uso.
+function isExcludedActivity(a: Activity): boolean {
+  const name = (a.Caso_de_Uso ?? '').toLowerCase().trim()
+  // Matches "APECS - Periamid", "apecs-periamid", "apecs periamid", etc.
+  return name.includes('apecs') && name.includes('periamid')
+}
+
 export async function fetchActivities(): Promise<ActivitiesResponse> {
   const resp = await fetchJSON<ActivitiesResponse>(`${BASE}/dim_actividades?${IDS_ASISTENTES}`)
   // Merge Set 3 activity names (roleplay_demorp6 not covered by dim_actividades)
   const existing = Array.isArray(resp) ? resp : (resp.data ?? [])
   const merged   = [...existing, ...DEMORP6_ACTIVITIES]
-  return { ...resp, data: merged } as ActivitiesResponse
+  // Remove legacy duplicate exercises before returning
+  const cleaned  = merged.filter(a => !isExcludedActivity(a))
+  return { ...resp, data: cleaned } as ActivitiesResponse
 }
 
 const COACH_MAESTRO_UC_IDS = new Set([174, 175, 176])
