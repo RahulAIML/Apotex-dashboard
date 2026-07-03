@@ -7,7 +7,7 @@ import { buildAssistantPrompt } from '../../lib/assistantPrompt'
 import { cn } from '../../lib/cn'
 
 const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-2.5-flash'
 const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=`
 
 interface Message {
