@@ -18,22 +18,35 @@ interface Message {
   pending?: boolean
 }
 
-/** Minimal markdown renderer — bold, bullets, line breaks */
+/** Minimal markdown renderer — bold, bullets, line breaks, headings */
 function MdText({ text }: { text: string }) {
+  // Normalise unmatched ** so they never show as raw punctuation
+  const clean = (s: string) => {
+    const count = (s.match(/\*\*/g) ?? []).length
+    return count % 2 !== 0 ? s.replace(/\*\*$/, '') : s
+  }
+  const parseBold = (raw: string) =>
+    clean(raw).split(/(\*\*[^*]+\*\*)/).map((seg, j) =>
+      seg.startsWith('**') && seg.endsWith('**')
+        ? <strong key={j} className="font-semibold text-white">{seg.slice(2, -2)}</strong>
+        : seg
+    )
+
   return (
     <div className="space-y-1.5">
       {text.split('\n').map((line, i) => {
-        const isBullet = /^[\-•*]\s/.test(line.trim())
-        const raw      = isBullet ? line.trim().slice(2) : line
-        const parts    = raw.split(/(\*\*[^*]+\*\*)/).map((seg, j) =>
-          seg.startsWith('**') && seg.endsWith('**')
-            ? <strong key={j} className="font-semibold">{seg.slice(2, -2)}</strong>
-            : seg
-        )
-        if (!raw && !isBullet) return <div key={i} className="h-1" />
-        return isBullet
-          ? <div key={i} className="flex gap-2"><span className="text-accent shrink-0 mt-px">•</span><span>{parts}</span></div>
-          : <p key={i}>{parts}</p>
+        const trimmed  = line.trim()
+        const isBullet = /^[-•*]\s/.test(trimmed)
+        const isH3     = trimmed.startsWith('### ')
+        const isH2     = trimmed.startsWith('## ')
+        if (!trimmed) return <div key={i} className="h-1" />
+        if (isH2)  return <p key={i} className="font-bold text-white mt-1">{parseBold(trimmed.slice(3))}</p>
+        if (isH3)  return <p key={i} className="font-semibold text-slate-200 mt-0.5">{parseBold(trimmed.slice(4))}</p>
+        if (isBullet) {
+          const raw = trimmed.slice(2)
+          return <div key={i} className="flex gap-2"><span className="text-accent shrink-0 mt-px">•</span><span>{parseBold(raw)}</span></div>
+        }
+        return <p key={i}>{parseBold(trimmed)}</p>
       })}
     </div>
   )
@@ -131,7 +144,7 @@ export function AssistantWidget() {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt() }] },
           contents: history,
-          generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
         }),
       })
 
@@ -239,9 +252,10 @@ export function AssistantWidget() {
                     <Sparkles className="w-3 h-3 text-accent" />
                   </div>
                   <div className="bg-surface border border-line/40 rounded-xl rounded-tl-sm px-3.5 py-2.5 text-xs text-slate-300 leading-relaxed">
-                    {es
+                    <MdText text={es
                       ? `Hola 👋 Soy tu asistente de analytics con acceso a los datos en tiempo real de Apotex — **${kpis?.totalSimulations ?? 0} simulaciones**, **${kpis?.activeAdvisors ?? 0} asesores activos**. ¿En qué puedo ayudarte?`
                       : `Hi 👋 I'm your analytics assistant with live access to Apotex data — **${kpis?.totalSimulations ?? 0} simulations**, **${kpis?.activeAdvisors ?? 0} active advisors**. How can I help?`}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2 mt-1">
