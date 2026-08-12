@@ -1,6 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Shell } from './components/layout/Shell'
+import { AuthProvider, useAuthContext } from './components/AuthProvider'
 import OverviewPage from './pages/OverviewPage'
 import SimulationsPage from './pages/SimulationsPage'
 import ConversationalPage from './pages/ConversationalPage'
@@ -14,6 +15,7 @@ import ReportsPage from './pages/ReportsPage'
 import ExecutiveReportPage from './pages/ExecutiveReportPage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
+import LoginPage from './pages/LoginPage'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { AssistantWidget } from './components/assistant/AssistantWidget'
 
@@ -23,30 +25,51 @@ const queryClient = new QueryClient({
   },
 })
 
+function AppRoutes() {
+  const { isAuthenticated } = useAuthContext()
+
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    )
+  }
+
+  return (
+    <>
+      <Shell>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<OverviewPage />} />
+            <Route path="/simulations" element={<SimulationsPage />} />
+            <Route path="/conversational" element={<ConversationalPage />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/activities" element={<ActivitiesPage />} />
+            <Route path="/organization" element={<OrganizationPage />} />
+            <Route path="/coaching" element={<CoachingPage />} />
+            {/* /rolplay and /supervisors removed — Apotex has no RolPlay module */}
+            <Route path="/business-lines" element={<BusinessLinesPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/executive-report" element={<ExecutiveReportPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </ErrorBoundary>
+      </Shell>
+      <AssistantWidget />
+    </>
+  )
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Shell>
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<OverviewPage />} />
-              <Route path="/simulations" element={<SimulationsPage />} />
-              <Route path="/conversational" element={<ConversationalPage />} />
-              <Route path="/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/activities" element={<ActivitiesPage />} />
-              <Route path="/organization" element={<OrganizationPage />} />
-              <Route path="/coaching" element={<CoachingPage />} />
-              {/* /rolplay and /supervisors removed — Apotex has no RolPlay module */}
-              <Route path="/business-lines" element={<BusinessLinesPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/executive-report" element={<ExecutiveReportPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </ErrorBoundary>
-        </Shell>
-        <AssistantWidget />
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   )
