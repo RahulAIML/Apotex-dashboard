@@ -16,6 +16,7 @@ import ExecutiveReportPage from './pages/ExecutiveReportPage'
 import SettingsPage from './pages/SettingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { AssistantWidget } from './components/assistant/AssistantWidget'
 
@@ -32,6 +33,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     )
