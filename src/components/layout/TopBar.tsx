@@ -1,8 +1,9 @@
-import { Globe, RefreshCw, Menu, ChevronDown } from 'lucide-react'
+import { Globe, RefreshCw, Menu } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAppStore, type Language } from '../../store'
 import { useTranslation } from '../../lib/i18n'
 import { cn } from '../../lib/cn'
+import { UserMenu } from './UserMenu'
 
 const LANGS: { code: Language; label: string; flag: string }[] = [
   { code: 'es', label: 'ES', flag: '🇲🇽' },
@@ -69,17 +70,7 @@ export function TopBar() {
           ))}
         </div>
 
-        {/* User info */}
-        <button className="hidden sm:flex items-center gap-2 pl-3 border-l border-gray-200 dark:border-white/[0.07]">
-          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-accent">A</span>
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold text-gray-800 dark:text-slate-200 leading-tight">Admin</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500 leading-tight">Administrator</p>
-          </div>
-          <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 ml-1" />
-        </button>
+        <UserMenu />
       </div>
     </header>
   )
