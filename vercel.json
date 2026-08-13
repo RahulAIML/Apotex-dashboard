@@ -1,25 +1,56 @@
 {
   "rewrites": [
-    { "source": "/apotex/api/:path*", "destination": "/api/proxy/apotex-api/:path*" },
-    { "source": "/bridge", "destination": "/api/proxy/bridge" },
-    { "source": "/bridge/:path*", "destination": "/api/proxy/bridge/:path*" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/apotex/api/:path*",
+      "destination": "/api/proxy?__route=apotex-api&__rest=:path*"
+    },
+    {
+      "source": "/bridge",
+      "destination": "/api/proxy?__route=bridge&__rest="
+    },
+    {
+      "source": "/bridge/:path*",
+      "destination": "/api/proxy?__route=bridge&__rest=:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/index.html",
-      "headers": [{ "key": "Cache-Control", "value": "no-store, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ]
